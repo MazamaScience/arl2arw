@@ -17,3 +17,8 @@ Jython/java project with utilities for data conversion.
 * [convert2nc python wrapper](https://github.com/meteoinfo/MeteoInfo/blob/d580c01563027add2298d99b1b68642dfe3a516a/MeteoInfoLab/pylib/mipylib/dataset/midata.py#L599)
 * [MeteoInfo java source code for org.meteoinfo.data.meteodata](https://github.com/meteoinfo/MeteoInfo/tree/master/MeteoInfoLib/src/main/java/org/meteoinfo/data/meteodata)
 
+## AirFire
+
+Robert Solomon initial stab at ingesting ARL data
+
+* [https://github.com/pnwairfire/BulkARLProfiler](https://github.com/pnwairfire/BulkARLProfiler)
