@@ -19,6 +19,6 @@ Jython/java project with utilities for data conversion.
 
 ## AirFire
 
-Robert Solomon initial stab at ingesting ARL data
+Robert Solomon initial stab at ingesting ARL data with `bulk_profiler_expanded_csv.F`:
 
 * [https://github.com/pnwairfire/BulkARLProfiler](https://github.com/pnwairfire/BulkARLProfiler)
