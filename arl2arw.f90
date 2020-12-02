@@ -30,7 +30,8 @@ program arl2arw
     character(4) :: model ! data model character
     integer :: grid_num ! grid number
     integer :: z_coord ! z coordinate
-    real :: pole_lat, pole_lon, ref_lat, ref_lon, grid_size, orient, tan_lat, sync_xp, sync_yp, sync_lat, sync_lon, reserved
+    real :: pole_lat, pole_lon, ref_lat, ref_lon, grid_size, orient, & 
+            tan_lat, sync_xp, sync_yp, sync_lat, sync_lon, reserved
     integer :: nx, ny, nz, nxy ! number of x, y points, z levels
     integer :: recl ! record length
     
