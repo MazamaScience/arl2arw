@@ -15,6 +15,8 @@ gfortran arl2arw.f90 -o arl2arw
 
 This should prompt the user for the name of the ARL data file within the current working directory.
 
+Compiling this program requires the GNU Fortran compiler, gfortran.
+
 ## HYSPLIT
 
 Air Resourcee Lab (ARL) trajectory model.
