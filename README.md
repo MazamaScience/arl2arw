@@ -2,6 +2,19 @@
 
 Convert ARL data format to WRF NetCDF
 
+# Usage
+
+arl2arw will display ARL packed data and unpack them for loading into a netCDF format.
+
+To convert the data data we will need to compile and output the fortran program in a directory containing the ARL packaed data file. 
+
+```
+gfortran arl2arw.f90 -o arl2arw
+./arl2arw
+```
+
+This should prompt the user for the name of the ARL data file within the current working directory.
+
 ## HYSPLIT
 
 Air Resourcee Lab (ARL) trajectory model.
