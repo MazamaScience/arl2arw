@@ -8,8 +8,10 @@ program arl2arw
 ! - ftp://arlftp.arlhq.noaa.gov/pub/archives/utility/chk_data.f
 !
 !------------------------------------------------------------------------------
+    use netcdf
     implicit none
-
+!------------------------------------------------------------------------------
+! Unpacking
     real, allocatable :: real_data(:, :) ! 2d unpacked data 
     character(1), allocatable :: char_data(:) ! 1d packed data
 
@@ -37,15 +39,43 @@ program arl2arw
     
     integer :: alstat ! /= 0 if not enough memory 
     integer :: iostat ! > 0 if not enough memory 
+!------------------------------------------------------------------------------
+! NetCDF
+    
+    character(*), parameter :: ncpath = 'output.nc' 
+    integer :: ncid 
 
-    ! unpacked character data is resolved to real_data 
+    integer :: lon_varid, lat_varid
+
+    ! writing 4-d data lat-long grid with 
+    character(*), parameter :: name_lat = 'latitude'
+    character(*), parameter :: name_lon = 'longitude'
+    character(*), parameter :: name_level = 'level'
+
+    integer :: lvl_dimid, lon_dimid, lat_dimid 
+
+    character(*), parameter :: units_lat = 'degrees_north'
+    character(*), parameter :: units_lon = 'degrees_east'
+
+
+!------------------------------------------------------------------------------
+
+    
     interface
+
+        ! unpacked character data is resolved to real_data 
         subroutine unpack(char_data, real_data, nx, ny, nexp, var1)
             character(1), intent(in) :: char_data(:)
             real, intent(out) :: real_data(:, :)
             integer, intent(in) :: nx, ny, nexp
             real, intent(in) :: var1
         end subroutine
+
+        ! wrapping netCDF calls with "call check()" checks the error status
+        subroutine check(status)
+            integer, intent(in) :: status
+        end subroutine
+
     end interface
     
     ! get file name
@@ -120,14 +150,37 @@ program arl2arw
         ! TODO: implement netcdf writeout
     end do
 
+    ! -----------------------------------------------------------------------
+
+    ! Create the NetCDF file
+    call check(nf90_create(path = ncpath, cmode = nf90_noclobber, ncid = ncid))
+
+    ! Define the dimensions
+    call check(nf90_def_dim(ncid, name_level, nf90_unlimited, lvl_dimid))
+
+    call check(nf90_def_var(ncid, name_lat, nf90_real, lat_dimid, lat_varid))
+    call check(nf90_def_var(ncid, name_lon, nf90_real, lon_dimid, lon_varid))
+
+    call check(nf90_put_att(ncid, lat_varid, 'units', units_lat))
+
+    ! close the file
+    call check(nf90_close(ncid))
+
+
+    
+
 end program arl2arw
 
-subroutine unpack(char_data, real_data, nx, ny, nexp, var1)
-    
+subroutine unpack(char_data, real_data, nx, ny, nexp, var1) 
+
     character(1), intent(in) :: char_data(:)    
     real, intent(out) :: real_data(:, :)
     integer, intent(in) :: nx, ny, nexp
     real, intent(in) :: var1
+    real :: scale
+    real :: vold
+    integer :: indx
+    integer :: i, j
 
     scale = 2.0 ** (7 - nexp)
     vold = var1 
@@ -142,5 +195,12 @@ subroutine unpack(char_data, real_data, nx, ny, nexp, var1)
         vold = real_data(1,j)
     end do
 
+end subroutine
+
+subroutine check(status)
+    integer, intent(in) :: status
+    if(status /= nf90_noerr) then 
+      stop "Check-Error"
+    end if 
 end subroutine
 
