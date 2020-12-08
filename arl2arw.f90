@@ -47,7 +47,7 @@ program arl2arw
     character(*), parameter :: ncpath = 'output.nc' 
     integer :: ncid 
 
-    integer :: lon_varid, lat_varid
+    integer :: lon_varid, lat_varid, rec_varid
 
     ! writing 4-d data lat-long grid with 
     character(*), parameter :: name_lat = 'latitude'
@@ -59,12 +59,14 @@ program arl2arw
     character(*), parameter :: units_lat = 'degrees_north'
     character(*), parameter :: units_lon = 'degrees_east'
 
-    integer :: nx_id, ny_id
+    integer :: nx_id, ny_id, nz_id
 
     real, parameter :: start_lat = 25.0, start_lon = -119.0
 
     real :: lats(10), lons(10)
     integer :: lon, lat
+
+    character(19) :: records 
 
 
 !------------------------------------------------------------------------------
@@ -197,12 +199,16 @@ program arl2arw
 
     call check(nf90_create(ncpath, nf90_clobber, ncid))
 
-    call check(nf90_def_dim(ncid, 'Time', nf90_unlimited, rec_dimid))
-    call check(nf90_def_dim(ncid, 'west_east', nx, nx_id))
-    call check(nf90_def_dim(ncid, 'south_north', ny, ny_id))
+        call check(nf90_def_dim(ncid, 'Time', nf90_unlimited, rec_dimid))
+        call check(nf90_def_dim(ncid, 'west_east', nx, nx_id))
+        call check(nf90_def_dim(ncid, 'south_north', ny, ny_id))
+        call check(nf90_def_dim(ncid, 'bottom_top', nz - 1, nz_id))
+        call check(nf90_def_dim(ncid, 'bottom_top_stag', nz, nz_id))
 
-    call check(nf90_def_var(ncid, 'west_east', nf90_real, nx_id, lon_varid))
-    call check(nf90_def_var(ncid, 'south_north', nf90_real, ny_id, lat_varid))
+        call check(nf90_def_var(ncid, 'Time', nf90_char, rec_dimid, rec_varid))
+        call check(nf90_def_var(ncid, 'XLAT', nf90_real, ny_id, lat_varid))
+        call check(nf90_def_var(ncid, 'XLONG', nf90_real, nx_id, lon_varid))
+
 
     call check(nf90_enddef(ncid))
 
@@ -214,8 +220,10 @@ program arl2arw
         lons(lon) = start_lon + (lon - 1) * 5.0
     end do
 
+    !call check(nf90_out_var(ncid, rec_varid, records))
     call check(nf90_put_var(ncid, lon_varid, lons))
     call check(nf90_put_var(ncid, lat_varid, lats))
+
 
     call check(nf90_close(ncid))
     
