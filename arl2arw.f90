@@ -12,6 +12,7 @@ program arl2arw
     implicit none
 !------------------------------------------------------------------------------
 ! Unpacking
+
     real, allocatable :: real_data(:, :) ! 2d unpacked data 
     character(1), allocatable :: char_data(:) ! 1d packed data
 
@@ -39,6 +40,7 @@ program arl2arw
     
     integer :: alstat ! /= 0 if not enough memory 
     integer :: iostat ! > 0 if not enough memory 
+
 !------------------------------------------------------------------------------
 ! NetCDF
     
@@ -52,10 +54,17 @@ program arl2arw
     character(*), parameter :: name_lon = 'longitude'
     character(*), parameter :: name_level = 'level'
 
-    integer :: lvl_dimid, lon_dimid, lat_dimid 
+    integer :: lvl_dimid, lon_dimid, lat_dimid, rec_dimid
 
     character(*), parameter :: units_lat = 'degrees_north'
     character(*), parameter :: units_lon = 'degrees_east'
+
+    integer :: nx_id, ny_id
+
+    real, parameter :: start_lat = 25.0, start_lon = -119.0
+
+    real :: lats(10), lons(10)
+    integer :: lon, lat
 
 
 !------------------------------------------------------------------------------
@@ -115,6 +124,7 @@ program arl2arw
              'Z-Coordinate: ', z_coord, new_line('a'),                  & 
              'Pole (lat,lon): ', pole_lat, pole_lon, new_line('a'),     & 
              'Reference (lat,lon): ', ref_lat, ref_lon, new_line('a'),  & 
+             'Reference grid size: ', grid_size, new_line('a'),         &
              'Orientation: ', orient, new_line('a'),                    & 
              'Tangent Latitude: ', tan_lat, new_line('a'),              & 
              'Synch (x,y): ', sync_xp, sync_yp, new_line('a'),          & 
@@ -152,22 +162,69 @@ program arl2arw
 
     ! -----------------------------------------------------------------------
 
-    ! Create the NetCDF file
-    call check(nf90_create(path = ncpath, cmode = nf90_noclobber, ncid = ncid))
+    !    wrf.arl
+    !YYMMDDHH: 20112521
+    !Model: AWRF
+    !Grid Number:           21 
+    !Z-Coordinate:            0 
+    !Pole (lat,lon):    45.6899986      -121.000000     
+    !Reference (lat,lon):    45.6899986      -121.000000     
+    !Orientation:    0.00000000     
+    !Tangent Latitude:    45.6899986     
+    !Synch (x,y):    203.000000       141.500000     
+    !Synch (lat,lon):    45.3499985      -118.930000     
+    !Reserved:    0.00000000     
+    !Number of X points:          405 
+    !Number of Y points:          282 
+    !Number of Levels:           38 
 
-    ! Define the dimensions
-    call check(nf90_def_dim(ncid, name_level, nf90_unlimited, lvl_dimid))
+    !   wrf.nc 
+    !$ ncdump -h wrfout_d3.2020112500.f21.0000
+    !netcdf wrfout_d3.2020112500.f21 {
+    !dimensions:
+    !   Time = UNLIMITED ; // (1 currently)
+    !   DateStrLen = 19 ;
+    !   west_east = 405 ;
+    !   south_north = 282 ;
+    !   bottom_top = 37 ;
+    !   bottom_top_stag = 38 ;
+    !   soil_layers_stag = 4 ;
+    !   west_east_stag = 406 ;
+    !   south_north_stag = 283 ;
+    !   seed_dim_stag = 2 ;
 
-    call check(nf90_def_var(ncid, name_lat, nf90_real, lat_dimid, lat_varid))
-    call check(nf90_def_var(ncid, name_lon, nf90_real, lon_dimid, lon_varid))
 
-    call check(nf90_put_att(ncid, lat_varid, 'units', units_lat))
 
-    ! close the file
+    call check(nf90_create(ncpath, nf90_clobber, ncid))
+
+    call check(nf90_def_dim(ncid, 'Time', nf90_unlimited, rec_dimid))
+    call check(nf90_def_dim(ncid, 'west_east', nx, nx_id))
+    call check(nf90_def_dim(ncid, 'south_north', ny, ny_id))
+
+    call check(nf90_def_var(ncid, 'west_east', nf90_real, nx_id, lon_varid))
+    call check(nf90_def_var(ncid, 'south_north', nf90_real, ny_id, lat_varid))
+
+    call check(nf90_enddef(ncid))
+
+
+    do lat = 1, 10 
+        lats(lat) = start_lat + (lat - 1) * 5.0
+    end do
+    do lon = 1, 10 
+        lons(lon) = start_lon + (lon - 1) * 5.0
+    end do
+
+    call check(nf90_put_var(ncid, lon_varid, lons))
+    call check(nf90_put_var(ncid, lat_varid, lats))
+
     call check(nf90_close(ncid))
-
-
     
+
+
+
+
+
+
 
 end program arl2arw
 
