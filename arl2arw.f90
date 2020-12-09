@@ -1,5 +1,5 @@
 program arl2arw
-!------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------
 !
 ! Program to convert the packed ARL meteorological file format to WRF netCDF
 ! More information for ARL packed metorological format: 
@@ -7,10 +7,10 @@ program arl2arw
 ! - https://www.ready.noaa.gov/archives.php
 ! - ftp://arlftp.arlhq.noaa.gov/pub/archives/utility/chk_data.f
 !
-!------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------
     use netcdf
     implicit none
-!------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------
 ! Unpacking
 
     real, allocatable :: real_data(:, :) ! 2d unpacked data 
@@ -41,8 +41,8 @@ program arl2arw
     integer :: alstat ! /= 0 if not enough memory 
     integer :: iostat ! > 0 if not enough memory 
 
-!------------------------------------------------------------------------------
-! NetCDF
+! -----------------------------------------------------------------------------
+! netCDF
     
     character(*), parameter :: ncpath = 'output.nc' 
     integer :: ncid 
@@ -68,10 +68,8 @@ program arl2arw
 
     character(19) :: records 
 
+! -----------------------------------------------------------------------------
 
-!------------------------------------------------------------------------------
-
-    
     interface
 
         ! unpacked character data is resolved to real_data 
@@ -88,6 +86,8 @@ program arl2arw
         end subroutine
 
     end interface
+
+! -----------------------------------------------------------------------------
     
     ! get file name
     write(*,*) 'Enter a file name:'
@@ -163,6 +163,7 @@ program arl2arw
     end do
 
     ! -----------------------------------------------------------------------
+    ! Header dump previews of ARL and WRF-netCDF
 
     !    wrf.arl
     !YYMMDDHH: 20112521
@@ -194,48 +195,53 @@ program arl2arw
     !   west_east_stag = 406 ;
     !   south_north_stag = 283 ;
     !   seed_dim_stag = 2 ;
+    ! -------------------------------------------------------------------------
 
-
-
+    ! Create the nc file
     call check(nf90_create(ncpath, nf90_clobber, ncid))
 
-        call check(nf90_def_dim(ncid, 'Time', nf90_unlimited, rec_dimid))
-        call check(nf90_def_dim(ncid, 'west_east', nx, nx_id))
-        call check(nf90_def_dim(ncid, 'south_north', ny, ny_id))
-        call check(nf90_def_dim(ncid, 'bottom_top', nz - 1, nz_id))
-        call check(nf90_def_dim(ncid, 'bottom_top_stag', nz, nz_id))
+    ! nc dimensions
+    call check(nf90_def_dim(ncid, 'Time', nf90_unlimited, rec_dimid))
+    call check(nf90_def_dim(ncid, 'west_east', nx, nx_id))
+    call check(nf90_def_dim(ncid, 'south_north', ny, ny_id))
+    call check(nf90_def_dim(ncid, 'bottom_top', nz - 1, nz_id))
+    call check(nf90_def_dim(ncid, 'bottom_top_stag', nz, nz_id))
 
-        call check(nf90_def_var(ncid, 'Time', nf90_char, rec_dimid, rec_varid))
-        call check(nf90_def_var(ncid, 'XLAT', nf90_real, ny_id, lat_varid))
-        call check(nf90_def_var(ncid, 'XLONG', nf90_real, nx_id, lon_varid))
+    ! nc variables
+    call check(nf90_def_var(ncid, 'Time', nf90_char, rec_dimid, rec_varid))
+    call check(nf90_def_var(ncid, 'XLAT', nf90_real, ny_id, lat_varid))
+    call check(nf90_def_var(ncid, 'XLONG', nf90_real, nx_id, lon_varid))
 
+    !call check(nf90_def_var(ncid, ''))
 
+    ! nc attributes
+    call check(nf90_put_att(ncid, lat_varid, 'description', 'LATITUDE, SOUTH IS NEGATIVE'))
+    call check(nf90_put_att(ncid, lat_varid, 'units', 'degree_north'))
+    call check(nf90_put_att(ncid, lon_varid, 'description', 'LONGITUDE, WEST IS NEGATIVE'))
+    call check(nf90_put_att(ncid, lon_varid, 'units', 'degree_east'))
+
+    ! end nc define 
     call check(nf90_enddef(ncid))
 
+    ! Messing about
+    ! do lat = 1, 10 
+    !     lats(lat) = start_lat + (lat - 1) * 5.0
+    ! end do
+    ! do lon = 1, 10 
+    !     lons(lon) = start_lon + (lon - 1) * 5.0
+    ! end do
 
-    do lat = 1, 10 
-        lats(lat) = start_lat + (lat - 1) * 5.0
-    end do
-    do lon = 1, 10 
-        lons(lon) = start_lon + (lon - 1) * 5.0
-    end do
+    ! !call check(nf90_out_var(ncid, rec_varid, records))
+    ! call check(nf90_put_var(ncid, lon_varid, lons))
+    ! call check(nf90_put_var(ncid, lat_varid, lats))
 
-    !call check(nf90_out_var(ncid, rec_varid, records))
-    call check(nf90_put_var(ncid, lon_varid, lons))
-    call check(nf90_put_var(ncid, lat_varid, lats))
-
-
+    ! close the nc file
     call check(nf90_close(ncid))
     
-
-
-
-
-
-
-
 end program arl2arw
 
+! -----------------------------------------------------------------------------
+! Subroutines 
 subroutine unpack(char_data, real_data, nx, ny, nexp, var1) 
 
     character(1), intent(in) :: char_data(:)    
@@ -263,9 +269,11 @@ subroutine unpack(char_data, real_data, nx, ny, nexp, var1)
 end subroutine
 
 subroutine check(status)
+
     integer, intent(in) :: status
     if(status /= nf90_noerr) then 
       stop "Check-Error"
     end if 
+
 end subroutine
 
