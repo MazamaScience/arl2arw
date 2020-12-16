@@ -16,7 +16,7 @@ program arl2arw
     real, allocatable :: real_data(:, :) ! 2d unpacked data 
     character(1), allocatable :: char_data(:) ! 1d packed data
 
-    character(80) :: file ! prompt file name
+    character(80) :: arl_file ! prompt file name
     character(50) :: label ! header label 
     character(3072) :: header ! file header
 
@@ -47,6 +47,9 @@ program arl2arw
     character(*), parameter :: ncpath = 'output.nc' 
     integer :: ncid 
 
+    character(80) :: nc_file
+    real, allocatable :: coord_data(:, :)
+
     integer :: lon_varid, lat_varid, rec_varid
 
     ! writing 4-d data lat-long grid with 
@@ -60,6 +63,10 @@ program arl2arw
     character(*), parameter :: units_lon = 'degrees_east'
 
     integer :: nx_id, ny_id, nz_id
+
+    integer :: nlvls, nlats, nlons
+
+    integer :: start(4)
 
     real, parameter :: start_lat = 25.0, start_lon = -119.0
 
@@ -90,12 +97,12 @@ program arl2arw
 ! -----------------------------------------------------------------------------
     
     ! get file name
-    write(*,*) 'Enter a file name:'
-    read(*, '(a)') file
-    file = adjustl(file)
+    write(*,*) 'Enter ARL file name:'
+    read(*, '(a)') arl_file
+    arl_file = adjustl(arl_file)
 
     ! open the file and decode the 50-byte header plus the fixed portion
-    open(10, file = file, recl = 158, access = 'direct', form = 'unformatted')
+    open(10, file = arl_file, recl = 158, access = 'direct', form = 'unformatted')
 
     ! decode the "standard" portion of the index record
     read(10, rec = 1) label, header(1:108)
@@ -119,7 +126,7 @@ program arl2arw
     recl = nxy + 50 ! record size + header length
 
     ! properly re-open the file with the record length
-    open(10, file = file, recl = recl, access = 'direct', form = 'unformatted')
+    open(10, file = arl_file, recl = recl, access = 'direct', form = 'unformatted')
 
     print *, 'Model: ', model, new_line('a'),                           & 
              'Grid Number: ', grid_num, new_line('a'),                  & 
@@ -156,12 +163,46 @@ program arl2arw
                 call unpack(char_data, real_data, nx, ny, nexp, var1)   
             end if
             ! preview a bit first row of each data
-            print *, level, var_desc, var1, real_data(2:3, 1), '...'
+            ! print *, level, var_desc, var1, real_data(2:3, 1), '...'
         end if
         n = n + 1
         ! TODO: implement netcdf writeout
     end do
 
+    ! -------------------------------------------------------------------------
+
+    write(*,*) 'Enter a NetCDF file name:'
+    read(*, '(a)') nc_file
+    nc_file = adjustl(nc_file)
+
+    call check(nf90_open(nc_file, nf90_nowrite, ncid))
+
+    ! Get the varids of the latitude and longitude coordinate variables.
+    call check(nf90_inq_varid(ncid, 'XLAT', lat_varid))
+    call check(nf90_inq_varid(ncid, 'XLON', lon_varid))
+
+      ! Read the latitude and longitude data.
+    call check( nf90_get_var(ncid, lat_varid, lats) )
+    call check( nf90_get_var(ncid, lon_varid, lons) )
+
+    ! print *, lats
+
+    do rec = 1, 480 ! TODO dynamic allocate
+        start(4) = rec
+        call check(nf90_get_var(ncid, lat_varid, count = rec - 1))
+        call check(nf90_get_var(ncid, lon_varid, count = rec - 1))
+
+        i = 0
+        do lvl = 1, nlvls
+            do lat = 1, nlats
+                do lon = 1, nlons
+                    ! Write each level variable
+                    i = i + 1
+                end do
+            end do
+        end do
+     ! next record
+    end do
     ! -----------------------------------------------------------------------
     ! Header dump previews of ARL and WRF-netCDF
 
