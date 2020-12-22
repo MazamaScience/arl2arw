@@ -1,4 +1,4 @@
-module unpack
+program unpack
 
   implicit none
 
@@ -28,6 +28,8 @@ module unpack
 
   integer :: i, k
   integer :: nexp 
+  character(4) :: label 
+  integer :: level
   real :: var1, prec
 
   interface
@@ -44,27 +46,27 @@ module unpack
   read(*, '(a)') arl
   arl = adjustl(arl)
 
-  open(10, file = arl, recl = 150, access = 'direct', form = 'unformatted')
+  open(10, file = arl, recl = 158, access = 'direct', form = 'unformatted')
   read(10, rec = 1) header_label, header(1:108)
   read(header_label,'(5i2,4x,a4)') year, month, day, hour, ifc, var_desc
   !! Debug
   ! write(*, '(a, 4i2)') 'YYMMDDHH: ', year, month, day, hour
-  read(header(1:108), '(a4, 1i3, 1i2,  12f7.0, 3i3)')         & 
-       model, grid_num, z_coord,                              &
-       pole_lat, pole_lon, ref_lat,                           &
-       ref_lon, grid_size, orient,                            &
-       tan_lat, sync_xp, sync_yp,                             &
-       sync_lat, sync_lon, reserved,                          &
+  read(header(1:108), '(a4, 1i3, 1i2,  12f7.0, 3i3)')   & 
+       model, grid_num, z_coord,                        &
+       pole_lat, pole_lon, ref_lat,                     &
+       ref_lon, grid_size, orient,                      &
+       tan_lat, sync_x, sync_y,                         &
+       sync_lat, sync_lon, reserved,                    &
        nx, ny, nz  
   close(10)
 
   nxy = nx * ny
   rec_len = nxy + 50
   
-  allocate(real_data(nx,ny), stat = rstat)
-  allocate(char_data(nxy), stat = cstat)
+  allocate(rdata(nx,ny), stat = rstat)
+  allocate(cdata(nxy), stat = cstat)
 
-  open(10, file = arl, recl = rec_len, acces = 'direct', form = 'unformatted')
+  open(10, file = arl, recl = rec_len, access = 'direct', form = 'unformatted')
 
   i = 1
   do 
@@ -72,9 +74,9 @@ module unpack
     if ( iostat > 0 ) then 
       exit
     else 
-      read(label, '(6i2, 2x, a4, 1i4, 2f7.0)') & 
-      year, month, day, hour, grid_num, level, & 
-      var_desc, nexp, prec, var1
+      read(label, '(6i2, 2x, a4, 1i4, 2f7.0)')  & 
+          year, month, day, hour, grid_num,     &
+          level, var_desc, nexp, prec, var1
       ! unpack data from header 
       if(var_desc /= 'INDX')  then 
         ! call decode(cdata, rdata, nx, ny, nexp, var1)   
@@ -83,7 +85,7 @@ module unpack
     i = i + 1
   end do
 
-end module
+end program unpack
 
 ! subroutine decode(cdata, rdata, nx, ny, nexp, var1) 
 
