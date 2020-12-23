@@ -50,6 +50,7 @@ program unpack
   read(10, rec = 1) header_label, header(1:108)
   read(header_label,'(5i2,4x,a4)') year, month, day, hour, ifc, var_desc
   !! Debug
+  !print *, header(1:108)
   ! write(*, '(a, 4i2)') 'YYMMDDHH: ', year, month, day, hour
   read(header(1:108), '(a4, 1i3, 1i2,  12f7.0, 3i3)')   & 
        model, grid_num, z_coord,                        &
@@ -59,6 +60,10 @@ program unpack
        sync_lat, sync_lon, reserved,                    &
        nx, ny, nz  
   close(10)
+
+  print *, header(1:108)
+
+  print *, nx, ny, nz
 
   nxy = nx * ny
   rec_len = nxy + 50
