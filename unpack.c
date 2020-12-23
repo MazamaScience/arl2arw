@@ -38,7 +38,7 @@ void main() {
 	printf("Header: \n");
 	fseek(arl_file, 0, SEEK_SET);
 	fread(&arl, sizeof(arl.header), 1, arl_file);
-	sscanf(arl.header, "%4s%3d%1d%f%f%f%f%f%f%f%f%f%f%f%f%3d%3d%3d", 
+	sscanf(arl.header, "%4s%3d%1d%f%f%f%f%f%f%f%f%f%f%f%7e%3d%3d%3d", 
 		arl.model,      &arl.grid_num,  &arl.z_coord, 
 		&arl.pole_lat,  &arl.pole_lon,  &arl.ref_lat, 
 		&arl.ref_lon,   &arl.grid_size, &arl.orient,   
@@ -46,7 +46,7 @@ void main() {
 		&arl.sync_lat,  &arl.sync_lon,  &arl.reserved, 
 		&arl.nx, 		&arl.ny, 		&arl.nz);
 
-	printf("%d\n", arl.nx);
+	printf("%s\n", arl.header);
 	
 	fclose(arl_file);
 
