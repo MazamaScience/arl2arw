@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 struct Arl {
 
@@ -22,6 +23,12 @@ struct Arl {
 void main() {
 
 	struct Arl arl;
+
+	int nxy;
+	int recl;
+
+	float *rdata;
+	char *cdata;
 
 	FILE * arl_file; // arl file
 
@@ -47,8 +54,16 @@ void main() {
 		&arl.nx, 		&arl.ny, 		&arl.nz);
 
 	printf("%s\n", arl.header);
-	
 	fclose(arl_file);
+
+	nxy = arl.nx * arl.ny; 
+	recl = nxy + 50;
+
+	// dynamic 2d allocation of real data, chacter data
+	rdata = (float *) malloc(arl.nx*arl.ny*sizeof(float));
+	cdata = (char *) malloc(nxy*sizeof(char));
+
+	printf("%ld\n", sizeof(cdata));
 
 
 }
