@@ -2,31 +2,32 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define A 8
+#define HBYTE 8
 
 struct header 
 {
-    char src[A];        char icx[A];        char mn[A];
-    char polelat[A];    char polelon[A];    char reflat[A]; 
-    char reflon[A];     char size[A];       char orient[A]; 
-    char tanlat[A];     char syncxp[A];     char syncyp[A]; 
-    char synclat[A];    char synclon[A];    char res[A]; 
-    char nx[A];         char ny[A];         char nz[A];
-    char kflag[A];      char lenh[A];
+    char src[HBYTE];        char icx[HBYTE];        char mn[HBYTE];
+    char polelat[HBYTE];    char polelon[HBYTE];    char reflat[HBYTE]; 
+    char reflon[HBYTE];     char size[HBYTE];       char orient[HBYTE]; 
+    char tanlat[HBYTE];     char syncxp[HBYTE];     char syncyp[HBYTE]; 
+    char synclat[HBYTE];    char synclon[HBYTE];    char res[HBYTE]; 
+    char nx[HBYTE];         char ny[HBYTE];         char nz[HBYTE];
+    char kflag[HBYTE];      char lenh[HBYTE];
 };
 
 struct label 
 {
-    char iyr[A]; 
-    char imo[A]; 
-    char ida[A]; 
-    char ihr[A];
-    char ifc[A];
-    char kvar[A];
+    char iyr[HBYTE]; 
+    char imo[HBYTE]; 
+    char ida[HBYTE]; 
+    char ihr[HBYTE];
+    char ifc[HBYTE];
+    char kvar[HBYTE];
 };
 
 void hdecode();
 void ldecode();
+long numberXY(char str[]);
 
 
 int main() {
@@ -39,6 +40,7 @@ int main() {
     char header[3072];
 
     struct header *hp = (struct header *)malloc(sizeof(struct header));
+    struct label *lp = (struct label *)malloc(sizeof(struct label)); 
 
     long nxy, recl;
 
@@ -50,11 +52,15 @@ int main() {
     
     // Decode the header
     hdecode(hp, header);
+    ldecode(lp, label);
 
-    nxy = atol((*hp).nx) * atol((*hp).ny);
+    nxy = numberXY(header);
     recl = nxy + 50; 
 
-    // Allocate array space
+    //nxy = atol((*hp).nx) * atol((*hp).ny);
+    //recl = nxy + 50; 
+
+    //Allocate array space
     cdata = (char *)malloc(recl * sizeof(char));
 
 
@@ -81,6 +87,31 @@ void ldecode(struct label *l, char *str)
 {
     sscanf(str, "%2c%2c%2c%2c%2c%4c", 
     l->iyr, l->imo, l->ida, l->ihr, l->ifc, l->kvar);
+}
+
+
+// Be simple. 
+long numberXY(char str[])
+{
+    
+    int nxy;
+    char nx[4]; // extra byte
+    char ny[4]; 
+    int nxpos = 93;
+    int nypos = nxpos + 3; 
+    
+    // copy three literal char 
+    strncpy(nx, str + nxpos, 3);
+    strncpy(ny, str + nypos, 3);
+
+    // add null char to extra buffer
+    nx[3] = '\0';
+    ny[3] = '\0';
+
+    nxy = atol(nx) * atol(ny);
+
+    return nxy; 
+
 }
 
 
