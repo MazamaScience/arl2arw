@@ -2,68 +2,55 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct Arl {
+struct header {
+    char src[4]; char icx[3]; char mn[2];
+    char polelat[7]; char polelon[7]; char reflat[7]; 
+    char reflon[7]; char size[7]; char orient[7]; 
+    char tanlat[7]; char syncxp[7]; char syncyp[7]; 
+    char synclat[7]; char synclon[7]; char res[7]; 
+    char nx[3]; char ny[3]; char nz[3];
+    char kflag[2]; char lenh[4];
+};
 
-	char header_label[50]; 
-	char header[158];
+struct header hdecode(struct header h, char *str)
+{
 
-	int year, month, day, hour, ifc;
-	char vdesc[4];
+    memcpy(&h, str, 108);
+    return h;
 
-	char model[4];
-	int grid_num; 
-	int z_coord;
-	float pole_lat, pole_lon, ref_lat, ref_lon, grid_size, orient; 
-	float tan_lat, sync_x, sync_y, sync_lat, sync_lon, reserved; 
-	int nx, ny, nz; 
-	int kflg, lenh;
+} 
 
-}; 
+int main() {
 
-void main() {
+    FILE* fparl;
 
-	struct Arl arl;
+    fparl = fopen("wrf.arl", "rb"); 
 
-	int nxy;
-	int recl;
+    char label[50];
+    char header[3072];
+    size_t lenh;
 
-	float *rdata;
-	char *cdata;
+    struct header head;
 
-	FILE * arl_file; // arl file
+    // Read the standard portion of the label(50) and header(108),
+    // decode the header to get dims for recl.
+    fread(label, sizeof(char), 50, fparl); 
+    fread(header, sizeof(char), 108, fparl);
 
-	// open the file
-	arl_file = fopen("wrf.arl", "rb");
+    head = hdecode(head, header);
 
-	printf("Header Label: \n");
-	//fseek(arl_file, 0, SEEK_SET);
-	fread(&arl, sizeof(arl.header_label), 1, arl_file);
-	sscanf(arl.header_label, "%2d%2d%2d%2d%2d%*d%4s", 
-		&arl.year, &arl.month, &arl.day, &arl.hour, &arl.ifc, arl.vdesc);
-	printf("%s\n", arl.header_label);
+    //printf("%s\n%d\n%d\n%f\n%f\n%f",head.src, head.icx, head.mn, head.polelat, head.polelon, head.reflat);
+    //printf("%s\n%s\n", head.src, head.nx);
+    fclose(fparl);
 
-	printf("Header: \n");
-	fseek(arl_file, 0, SEEK_SET);
-	fread(&arl, sizeof(arl.header), 1, arl_file);
-	sscanf(arl.header, "%4s%3d%1d%f%f%f%f%f%f%f%f%f%f%f%7e%3d%3d%3d", 
-		arl.model,      &arl.grid_num,  &arl.z_coord, 
-		&arl.pole_lat,  &arl.pole_lon,  &arl.ref_lat, 
-		&arl.ref_lon,   &arl.grid_size, &arl.orient,   
-		&arl.tan_lat,   &arl.sync_x,    &arl.sync_y,    
-		&arl.sync_lat,  &arl.sync_lon,  &arl.reserved, 
-		&arl.nx, 		&arl.ny, 		&arl.nz);
+    // Read 
+    return 0;
+    
+}
 
-	printf("%s\n", arl.header);
-	fclose(arl_file);
-
-	nxy = arl.nx * arl.ny; 
-	recl = nxy + 50;
-
-	// dynamic 2d allocation of real data, chacter data
-	rdata = (float *) malloc(arl.nx*arl.ny*sizeof(float));
-	cdata = (char *) malloc(nxy*sizeof(char));
-
-	printf("%ld\n", sizeof(cdata));
-
+char ldecode() {
 
 }
+
+
+
