@@ -4,7 +4,8 @@
 
 #define A 8
 
-struct header {
+struct header 
+{
     char src[A];        char icx[A];        char mn[A];
     char polelat[A];    char polelon[A];    char reflat[A]; 
     char reflon[A];     char size[A];       char orient[A]; 
@@ -14,7 +15,8 @@ struct header {
     char kflag[A];      char lenh[A];
 };
 
-struct label {
+struct label 
+{
     char iyr[A]; 
     char imo[A]; 
     char ida[A]; 
@@ -22,6 +24,46 @@ struct label {
     char ifc[A];
     char kvar[A];
 };
+
+void hdecode();
+void ldecode();
+
+
+int main() {
+
+    FILE* fparl;
+
+    fparl = fopen("wrf.arl", "rb"); 
+
+    char label[50];
+    char header[3072];
+
+    struct header *hp = (struct header *)malloc(sizeof(struct header));
+
+    long nxy, recl;
+
+    char *cdata;
+
+    // Read the standard portion of the label(50) and header(108),
+    fread(label, sizeof(char), 50, fparl); 
+    fread(header, sizeof(char), 108, fparl);
+    
+    // Decode the header
+    hdecode(hp, header);
+
+    nxy = atol((*hp).nx) * atol((*hp).ny);
+    recl = nxy + 50; 
+
+    // Allocate array space
+    cdata = (char *)malloc(recl * sizeof(char));
+
+
+    
+    fclose(fparl);
+
+    return 0;
+    
+}
 
 void hdecode(struct header *h, char *str)
 {
@@ -37,39 +79,8 @@ void hdecode(struct header *h, char *str)
 
 void ldecode(struct label *l, char *str)
 {
-    sscanf(str, "%2d%2d%2d%2d", l->iyr, l->imo, l->ida, l->ihr);
-}
-
-int main() {
-
-    FILE* fparl;
-
-    fparl = fopen("wrf.arl", "rb"); 
-
-    char label[50];
-    char header[3072];
-
-    struct header *head = (struct header *)malloc(sizeof(struct header));
-
-    long nxy, recl;
-
-    // Read the standard portion of the label(50) and header(108),
-    // decode the header to get dims for recl.
-    fread(label, sizeof(char), 50, fparl); 
-    fread(header, sizeof(char), 108, fparl);
-
-    hdecode(head, header);
-
-    nxy = atoi((*head).nx) * atoi((*head).ny);
-
-    printf("%d", nxy);
-
-    
-    fclose(fparl);
-
-    // Read 
-    return 0;
-    
+    sscanf(str, "%2c%2c%2c%2c%2c%4c", 
+    l->iyr, l->imo, l->ida, l->ihr, l->ifc, l->kvar);
 }
 
 
