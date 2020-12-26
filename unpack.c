@@ -15,13 +15,17 @@ struct header {
 };
 
 struct label {
-
+    char iyr[A]; 
+    char imo[A]; 
+    char ida[A]; 
+    char ihr[A];
+    char ifc[A];
+    char kvar[A];
 };
 
 void hdecode(struct header *h, char *str)
 {
-    sscanf(str, 
-    "%4c%3c%2c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%3c%3c%3c%2c%4c", 
+    sscanf(str, "%4c%3c%2c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%7c%3c%3c%3c%2c%4c", 
         h->src,     h->icx,     h->mn,
         h->polelat, h->polelon, h->reflat, 
         h->reflon,  h->size,    h->orient, 
@@ -30,6 +34,11 @@ void hdecode(struct header *h, char *str)
         h->nx,      h->ny,      h->nz, 
         h->kflag,   h->lenh);
 } 
+
+void ldecode(struct label *l, char *str)
+{
+    sscanf(str, "%2d%2d%2d%2d", l->iyr, l->imo, l->ida, l->ihr);
+}
 
 int main() {
 
@@ -42,6 +51,8 @@ int main() {
 
     struct header *head = (struct header *)malloc(sizeof(struct header));
 
+    long nxy, recl;
+
     // Read the standard portion of the label(50) and header(108),
     // decode the header to get dims for recl.
     fread(label, sizeof(char), 50, fparl); 
@@ -49,7 +60,9 @@ int main() {
 
     hdecode(head, header);
 
-    puts(head->syncyp);
+    nxy = atoi((*head).nx) * atoi((*head).ny);
+
+    printf("%d", nxy);
 
     
     fclose(fparl);
@@ -57,10 +70,6 @@ int main() {
     // Read 
     return 0;
     
-}
-
-char ldecode() {
-
 }
 
 
