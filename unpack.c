@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
+// #include <math.h>
 
 
 long numXY(char str[]);
+int numX(char *str);
+int numY(char *str);
 char *varDesc(char str[]);
 long numRecs(long size, long recl);
 int numExp(char *str);
 float numVar1(char *str); 
-float unpack(char *cdata, float *rdata, long nx, long ny, int nexp, float var1);
+float unpack(char *cdata, float *rdata, int nx, int ny, int nexp, float var1);
 
 int main() {
 
@@ -22,6 +24,8 @@ int main() {
     char *header;
 
     long nxy, recl, fsize;
+
+    int nx, ny;
 
     int rec;
 
@@ -51,7 +55,10 @@ int main() {
     hindex = varDesc(label);
 
     // Get grid dimensions & record length
-    nxy = numXY(header);
+    // nxy = numXY(header);
+    nx = numX(header); 
+    ny = numY(header);
+    nxy = nx * ny;
     recl = nxy + 50; 
 
     // Allocate array space
@@ -111,6 +118,28 @@ long numXY(char str[])
     return nxy; 
 }
 
+int numX(char *str)
+{
+    int ix;
+    char cx[4]; // +1 
+    int xpos = 93;
+
+    strncpy(cx, str + xpos, 3); 
+    cx[3] = '\0';
+    ix = atoi(cx);
+    return ix; 
+}
+int numY(char *str) 
+{
+    int ny;
+    char cny[4]; 
+    int nypos = 96;
+    strncpy(cny, str + nypos, 3);
+    cny[3] = '\0';
+    ny = atoi(cny);
+    return ny; 
+}
+
 char *varDesc(char str[]) 
 {
     char *desc; 
@@ -149,17 +178,17 @@ float numVar1(char *str) {
     return var;
 }
 
-float unpack(char *cdata, float *rdata, long nx, long ny, int nexp, float var1) 
-{
-    //float *rdata;
-    float scale, vold;
-    int indx, i, j;
+// float unpack(char *cdata, float *rdata, int nx, int ny, int nexp, float var1) 
+// {
+//     //float *rdata;
+//     float scale, vold;
+//     int indx, i, j;
     
-    scale = pow(2.0, 7-nexp);
-    printf("%f", scale);
+//     scale = pow(2.0, 7-nexp);
+//     printf("%f", scale);
 
-    return 0; 
-}
+//     return 0; 
+// }
 
 
 
