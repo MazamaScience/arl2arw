@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-// #include <math.h>
+#include <math.h>
 
 
 long numXY(char str[]);
@@ -9,9 +9,9 @@ int numX(char *str);
 int numY(char *str);
 char *varDesc(char str[]);
 long numRecs(long size, long recl);
-int numExp(char *str);
-float numVar1(char *str); 
-float unpack(char *cdata, float *rdata, int nx, int ny, int nexp, float var1);
+double numExp(char *str);
+double numVar1(char *str); 
+float unpack(char *cdata, float *rdata, int nx, int ny, double nexp, float var1);
 
 int main() {
 
@@ -32,7 +32,7 @@ int main() {
     char *hindex; //header index
 
     int nexp;
-    float var1; 
+    double var1; 
 
     // Open ARL to file stream
     arl = fopen("wrf.arl", "rb"); 
@@ -78,14 +78,10 @@ int main() {
             nexp = numExp(label);
             var1 = numVar1(label);
 
-            printf("%d\t%f\n", nexp, var1);
-
-            //unpack(cdata, )
-            
+            unpack(cdata, rdata, nx, ny, nexp, var1);
             
         } 
-        
-        
+    
     }
 
     // Close ARL file stream
@@ -97,47 +93,26 @@ int main() {
 
 
 // Be simple. 
-long numXY(char str[])
-{
-    int nxy;
-    char nx[4]; // extra byte
-    char ny[4]; 
-    int nxpos = 93;
-    int nypos = nxpos + 3; 
-    
-    // copy three literal char 
-    strncpy(nx, str + nxpos, 3);
-    strncpy(ny, str + nypos, 3);
-
-    // add null char to extra buffer
-    nx[3] = '\0';
-    ny[3] = '\0';
-
-    nxy = atol(nx) * atol(ny);
-
-    return nxy; 
-}
-
 int numX(char *str)
 {
     int ix;
     char cx[4]; // +1 
     int xpos = 93;
-
     strncpy(cx, str + xpos, 3); 
     cx[3] = '\0';
     ix = atoi(cx);
     return ix; 
 }
+
 int numY(char *str) 
 {
-    int ny;
-    char cny[4]; 
-    int nypos = 96;
-    strncpy(cny, str + nypos, 3);
-    cny[3] = '\0';
-    ny = atoi(cny);
-    return ny; 
+    int iy;
+    char cy[4]; 
+    int ypos = 96;
+    strncpy(cy, str + ypos, 3);
+    cy[3] = '\0';
+    iy = atoi(cy);
+    return iy; 
 }
 
 char *varDesc(char str[]) 
@@ -157,7 +132,7 @@ long numRecs(long size, long recl)
     return size / recl;
 }
 
-int numExp(char *str) {
+double numExp(char *str) {
     char nexp[5]; // +1
     int nexpos = 18; 
     int exp;
@@ -165,30 +140,42 @@ int numExp(char *str) {
     strncpy(nexp, str + nexpos, 4);
     nexp[4] = '\0';
 
-    exp = atoi(nexp); 
+    exp = atof(nexp); 
     return exp; 
 }
 
-float numVar1(char *str) {
+double numVar1(char *str) {
     char var1[8]; // +1
     int var1pos = 22; 
-    float var;
+    double var;
     strncpy(var1, str + var1pos, 7); 
     var = atof(var1);
     return var;
 }
 
-// float unpack(char *cdata, float *rdata, int nx, int ny, int nexp, float var1) 
-// {
-//     //float *rdata;
-//     float scale, vold;
-//     int indx, i, j;
-    
-//     scale = pow(2.0, 7-nexp);
-//     printf("%f", scale);
+float unpack(char *cdata, float *rdata, int nx, int ny, double nexp, float var1) 
+{
+    //float *rdata;
+    double scale, vold;
+    int idx, i, j;
 
-//     return 0; 
-// }
+    scale = pow(2.0, 7.0 - nexp);
+    vold = var1; // Save prev value
+    idx = 0;
+    for ( j = 0; j < ny; ++j )
+    {
+        for ( i = 0; i < nx; ++i)
+        {
+             
+            vold = (cdata[idx] - 127.0) / scale + (double)vold; 
+            printf("%lf\t", vold);
+            ++idx;
+
+        }
+    }
+
+    return 0; 
+}
 
 
 
