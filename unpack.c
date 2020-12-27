@@ -11,14 +11,14 @@ char *varDesc(char str[]);
 long numRecs(long size, long recl);
 double numExp(char *str);
 double numVar1(char *str); 
-float unpack(char *cdata, float *rdata, int nx, int ny, double nexp, float var1);
+float unpack(char *cdata, double *rdata, int nx, int ny, double nexp, double var1);
 
 int main() {
 
     FILE *arl;
 
     char *cdata; 
-    float *rdata; 
+    double *rdata; 
     
     char *label;
     char *header;
@@ -63,7 +63,7 @@ int main() {
 
     // Allocate array space
     cdata = (char *)malloc(sizeof(char) * nxy);
-    rdata = (float *)malloc(sizeof(float) * 1); // DEBUG 
+    rdata = (double *)malloc(sizeof(double) * nx * ny); 
     
     rewind(arl);
     rec = 0;
@@ -153,26 +153,33 @@ double numVar1(char *str) {
     return var;
 }
 
-float unpack(char *cdata, float *rdata, int nx, int ny, double nexp, float var1) 
+// needs work
+float unpack(char *cdata, double *rdata, int nx, int ny, double nexp, double var1) 
 {
-    //float *rdata;
     double scale, vold;
     int idx, i, j;
 
     scale = pow(2.0, 7.0 - nexp);
     vold = var1; // Save prev value
     idx = 0;
-    for ( j = 0; j < ny; ++j )
+    for ( j = 1; j < ny; ++j )
     {
-        for ( i = 0; i < nx; ++i)
+        for ( i = 1; i < nx; ++i)
         {
-             
-            vold = (cdata[idx] - 127.0) / scale + (double)vold; 
-            printf("%lf\t", vold);
             ++idx;
+            *(rdata + j*ny  + i) = ((int)cdata[idx] - 127.0) / scale + vold; 
+            vold = *(rdata + j*nx  + i);
+             
+            if ( i < 2 && j < 2 ) 
+            {
 
+            }
+            
         }
+        vold = *(rdata + j*ny);
+        printf("\t%lf\t", vold);
     }
+   
 
     return 0; 
 }
