@@ -61,17 +61,17 @@ int main ()
   rec = 0;
   while (rec <= numRecs (fsize, recl))
   {
-      ++rec;
-      fread (label, sizeof (char), 50, arl);
-      fread (cdata, sizeof (char), nxy, arl);
-      if (strcmp (varDesc (label), hindex) != 0)
-	    {
-	      nexp = numExp (label);
-	      var1 = numVar1 (label);
-	      unpack (cdata, rdata, nx, ny, nexp, var1);
+    ++rec;
+    fread (label, sizeof (char), 50, arl);
+    fread (cdata, sizeof (char), nxy, arl);
+    if (strcmp (varDesc (label), hindex) != 0)
+    {
+      nexp = numExp (label);
+      var1 = numVar1 (label);
+      unpack (cdata, rdata, nx, ny, nexp, var1);
 
-	    }
     }
+  }
 
   // Close ARL file stream
   fclose (arl);
@@ -148,18 +148,18 @@ float unpack (char *cdata, double *rdata, int nx, int ny, double nexp, double va
   idx = 0;
 
   for (j = 1; j < ny; ++j)
+  {
+    for (i = 1; i < nx; ++i)
     {
-      for (i = 1; i < nx; ++i)
-	{
-	  ++idx;
-	  *(rdata + j * ny + i) = ((int) cdata[idx] - 127.0) / scale + vold;
-	  vold = *(rdata + j * nx + i);
-	  printf ("\t\t%lf", vold);
-	  // Whhat about edge cases like index 1 or end of??
+      ++idx;
+      *(rdata + j * ny + i) = ((int) cdata[idx] - 127.0) / scale + vold;
+      vold = *(rdata + j * nx + i);
+      printf ("\t\t%lf", vold);
+      // Whhat about edge cases like index 1 or end of??
 
-	}
-      vold = *(rdata + j * ny);
     }
+    vold = *(rdata + j * ny);
+  }
 
   return 0;
 }
