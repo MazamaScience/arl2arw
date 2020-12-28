@@ -13,175 +13,157 @@ double numExp(char *str);
 double numVar1(char *str); 
 float unpack(char *cdata, double *rdata, int nx, int ny, double nexp, double var1);
 
-int main() {
+int main() 
+{
+	FILE *arl; // ARL file stream 
+	char *cdata; // packed character 
+	double *rdata; // unpacked real  
 
-    FILE *arl;
+	char *label; // standard label 50-bytes
+	char *header; // header 108-bytes
+	char *hindex; //header index
 
-    char *cdata; 
-    double *rdata; 
-    
-    char *label;
-    char *header;
+	long fsize; // file size
+	int nx, ny; // x, y dims
+	long nxy, recl; // num xy, record length
+	int nexp; // scaling integer 
+	double var1; // variable at (1,1) 
+	int rec; // record indicie
 
-    long nxy, recl, fsize;
+	// Open ARL to file stream
+	arl = fopen("wrf.arl", "rb"); 
 
-    int nx, ny;
+	// Get the file size
+	fseek(arl, 0, SEEK_END); 
+	fsize = ftell(arl); 
+	rewind(arl); 
 
-    int rec;
+	// Allocate label and ARL header array space
+	label = (char *)malloc(sizeof(char) * 50);
+	header = (char *)malloc(sizeof(char) * 3072); // Overflow memory
 
-    char *hindex; //header index
+	// Read the standard portion of the label(50) and header(108)
+	fread(label, sizeof(char), 50, arl); 
+	fread(header, sizeof(char), 108, arl);
 
-    int nexp;
-    double var1; 
+	// Store header index label
+	hindex = varDesc(label);
 
-    // Open ARL to file stream
-    arl = fopen("wrf.arl", "rb"); 
+	// Get grid dimensions & record length
+	nx = numX(header); 
+	ny = numY(header);
+	nxy = nx * ny;
+	recl = nxy + 50; 
 
-    // Get the file size
-    fseek(arl, 0, SEEK_END); 
-    fsize = ftell(arl); 
-    rewind(arl); 
+	// Allocate array space
+	cdata = (char *)malloc(sizeof(char) * nxy);
+	rdata = (double *)malloc(sizeof(double) * nx * ny); 
 
-    // Allocate label and ARL header array space
-    label = (char *)malloc(sizeof(char) * 50);
-    header = (char *)malloc(sizeof(char) * 3072);
+	rewind(arl);
+	rec = 0;
+	while ( rec < numRecs(fsize, recl) ) 
+	{   
+		++rec;
+		fread(label, sizeof(char), 50, arl);
+		fread(cdata, sizeof(char), nxy, arl);
+		if ( strcmp(varDesc(label), hindex) != 0 ) 
+		{
+			nexp = numExp(label);
+			var1 = numVar1(label);
 
+			unpack(cdata, rdata, nx, ny, nexp, var1);
+			
+		} 
+	}
 
-    // Read the standard portion of the label(50) and header(108)
-    fread(label, sizeof(char), 50, arl); 
-    fread(header, sizeof(char), 108, arl);
-    
-    // Store header index label
-    hindex = varDesc(label);
+	// Close ARL file stream
+	fclose(arl);
 
-    // Get grid dimensions & record length
-    // nxy = numXY(header);
-    nx = numX(header); 
-    ny = numY(header);
-    nxy = nx * ny;
-    recl = nxy + 50; 
-
-    // Allocate array space
-    cdata = (char *)malloc(sizeof(char) * nxy);
-    rdata = (double *)malloc(sizeof(double) * nx * ny); 
-    
-    rewind(arl);
-    rec = 0;
-    while ( rec < numRecs(fsize, recl) ) 
-    {   
-        ++rec;
-        fread(label, sizeof(char), 50, arl);
-        fread(cdata, sizeof(char), nxy, arl);
-        if ( strcmp(varDesc(label), hindex) != 0 ) 
-        {
-
-            nexp = numExp(label);
-            var1 = numVar1(label);
-
-            unpack(cdata, rdata, nx, ny, nexp, var1);
-            
-        } 
-    
-    }
-
-    // Close ARL file stream
-    fclose(arl);
-
-    return 0;
+	return 0;
 
 }
-
 
 // Be simple. 
 int numX(char *str)
 {
-    int ix;
-    char cx[4]; // +1 
-    int xpos = 93;
-    strncpy(cx, str + xpos, 3); 
-    cx[3] = '\0';
-    ix = atoi(cx);
-    return ix; 
+	int ix;
+	char cx[4]; // +1 
+	int xpos = 93;
+	strncpy(cx, str + xpos, 3); 
+	cx[3] = '\0';
+	ix = atoi(cx);
+	return ix; 
 }
 
 int numY(char *str) 
 {
-    int iy;
-    char cy[4]; 
-    int ypos = 96;
-    strncpy(cy, str + ypos, 3);
-    cy[3] = '\0';
-    iy = atoi(cy);
-    return iy; 
+	int iy;
+	char cy[4]; 
+	int ypos = 96;
+	strncpy(cy, str + ypos, 3);
+	cy[3] = '\0';
+	iy = atoi(cy);
+	return iy; 
 }
 
-char *varDesc(char str[]) 
+char *varDesc(char *str) 
 {
-    char *desc; 
-    int dpos = 14;
-    
-    desc = malloc(5); // extra byte
-    strncpy(desc, str + dpos, 4); 
-    desc[4] = '\0';
-
-    return desc;
+	char *desc; 
+	int dpos = 14;
+	desc = malloc(5); // extra byte
+	strncpy(desc, str + dpos, 4); 
+	desc[4] = '\0';
+	return desc;
 }
 
 long numRecs(long size, long recl)
 {   
-    return size / recl;
+	return size / recl;
 }
 
 double numExp(char *str) {
-    char nexp[5]; // +1
-    int nexpos = 18; 
-    int exp;
-
-    strncpy(nexp, str + nexpos, 4);
-    nexp[4] = '\0';
-
-    exp = atof(nexp); 
-    return exp; 
+	char nexp[5]; // +1
+	int nexpos = 18; 
+	int exp;
+	strncpy(nexp, str + nexpos, 4);
+	nexp[4] = '\0';
+	exp = atof(nexp); 
+	return exp; 
 }
 
 double numVar1(char *str) {
-    char var1[8]; // +1
-    int var1pos = 22; 
-    double var;
-    strncpy(var1, str + var1pos, 7); 
-    var = atof(var1);
-    return var;
+	char var1[8]; // +1
+	int var1pos = 22; 
+	double var;
+	strncpy(var1, str + var1pos, 7); 
+	var = atof(var1);
+	return var;
 }
 
 // needs work
 float unpack(char *cdata, double *rdata, int nx, int ny, double nexp, double var1) 
 {
-    double scale, vold;
-    int idx, i, j;
+	double scale, vold;
+	int idx, i, j;
+	scale = pow(2.0, 7.0 - nexp);
+	vold = var1; // Save prev value
+	idx = 0;
 
-    scale = pow(2.0, 7.0 - nexp);
-    vold = var1; // Save prev value
-    idx = 0;
-    for ( j = 1; j < ny; ++j )
-    {
-        for ( i = 1; i < nx; ++i)
-        {
-            ++idx;
-            *(rdata + j*ny  + i) = ((int)cdata[idx] - 127.0) / scale + vold; 
-            vold = *(rdata + j*nx  + i);
-             
-            if ( i < 2 && j < 2 ) 
-            {
+	for ( j = 1; j < ny; ++j )
+	{
+		for ( i = 1; i < nx; ++i )
+		{
+			++idx;
+			*(rdata + j*ny  + i) = ((int)cdata[idx] - 127.0) / scale + vold; 
+			vold = *(rdata + j*nx  + i);
+			printf("\t%lf\t", vold);
+			// Whhat about edge cases like index 1 or end of??
 
-            }
-            
-        }
-        vold = *(rdata + j*ny);
-        printf("\t%lf\t", vold);
-    }
-   
+		}
+		vold = *(rdata + j*ny);
+	}
 
-    return 0; 
+	return 0; 
 }
 
 

@@ -15,13 +15,13 @@ gfortran arl2arw.f90 -o arl2arw -I/usr/include -lnetcdff
 ./arl2arw
 ```
 
-### C 
+### C Unpacking
 ```
-gcc -o ncgrid ncgrid.c `nc-config --cflags --libs`
-./ncgrid
+gcc -o unpack unpack.c -lm 
+./unpack
 ```
 
-This should prompt the user for the name of the ARL data file within the current working directory.
+*This should prompt the user for the name of the ARL data file within the current working directory.
 
 Compiling this program requires the GNU Fortran compiler, gfortran.
 
