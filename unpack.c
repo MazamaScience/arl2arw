@@ -11,9 +11,10 @@ double numExp (char *str);
 double numVar1 (char *str);
 float unpack (char *cdata, double *rdata, int nx, int ny, double nexp, double var1);
 
-int main ()
+int main ( int argc, char **argv )
 {
   FILE *arl;			  // ARL file stream 
+  char fpath[80];
   char *cdata;			// packed character 
   double *rdata;		// unpacked real  
 
@@ -29,7 +30,7 @@ int main ()
   int rec;				  // record indicie
 
   // Open ARL to file stream
-  arl = fopen ("wrf.arl", "rb");
+  arl = fopen (argv[1], "rb");
 
   // Get the file size
   fseek (arl, 0, SEEK_END);
@@ -59,7 +60,7 @@ int main ()
 
   rewind (arl);
   rec = 0;
-  while (rec <= numRecs (fsize, recl))
+  while (rec < 2)//numRecs (fsize, recl)) //  DEBUG
   {
     ++rec;
     fread (label, sizeof (char), 50, arl);
@@ -69,7 +70,6 @@ int main ()
       nexp = numExp (label);
       var1 = numVar1 (label);
       unpack (cdata, rdata, nx, ny, nexp, var1);
-
     }
   }
 
@@ -151,14 +151,19 @@ float unpack (char *cdata, double *rdata, int nx, int ny, double nexp, double va
   {
     for (i = 1; i < nx; ++i)
     {
-      ++idx;
+      if (i < 1 && j < 1) 
+      {
+        //get var 1
+      } 
+      printf (": %lf", vold);
       *(rdata + j * ny + i) = ((int) cdata[idx] - 127.0) / scale + vold;
       vold = *(rdata + j * nx + i);
-      printf ("\t\t%lf", vold);
+      printf("\n INDEX: %d\n",idx);
+      ++idx;
       // Whhat about edge cases like index 1 or end of??
 
     }
-    vold = *(rdata + j * ny);
+    vold = *(rdata + j * nx);
   }
 
   return 0;
