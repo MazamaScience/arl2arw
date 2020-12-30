@@ -18,7 +18,7 @@ gfortran arl2arw.f90 -o arl2arw -I/usr/include -lnetcdff
 ### C Unpacking
 ```
 gcc -o unpack unpack.c -lm 
-./unpack
+./unpack YOUR_WRF_FILE
 ```
 
 *This should prompt the user for the name of the ARL data file within the current working directory.
