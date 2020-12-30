@@ -17,10 +17,10 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
 int main ( int argc, char *argv[] )
 {
 
-  FILE *arl;			// ARL file stream 
+  FILE *arl;      // ARL file stream 
   long fsize;     // file byte size
 
-  char *label;		// standard label 50-bytes
+  char *label;    // standard label 50-bytes
   char *header;   // header 108-bytes
   char *hindex;   // header index desc
 
@@ -39,7 +39,7 @@ int main ( int argc, char *argv[] )
 
   // Allocate label and ARL header array space
   label = malloc (sizeof (char) * LABSIZE);
-  header = malloc (sizeof (char) * 3072);	// Overflow 
+  header = malloc (sizeof (char) * 3072); // Overflow 
 
   // Read the standard portion of the label(50) and header(108)
   fread (label, sizeof (char), LABSIZE, arl);
@@ -55,7 +55,7 @@ int main ( int argc, char *argv[] )
   recl = nxy + LABSIZE;
 
   // Define data arrays
-  char *cdata;			                         // packed 1-d char array
+  char *cdata;                               // packed 1-d char array
   double (*rdata)[(size_t) nx][(size_t) ny]; // unpacked 2-d real array
 
   // Allocate array space
@@ -89,7 +89,7 @@ int main ( int argc, char *argv[] )
 int numX (char str[])
 {
   int ix;
-  char cx[4];			// +1 
+  char cx[4]; // +1 
   int xpos = 93;
 
   strncpy (cx, str + xpos, 3);
@@ -102,7 +102,7 @@ int numX (char str[])
 int numY (char str[])
 {
   int iy;
-  char cy[4];
+  char cy[4]; // +1 
   int ypos = 96;
 
   strncpy (cy, str + ypos, 3);
@@ -117,7 +117,7 @@ char *varDesc (char str[])
   char *desc;
   int dpos = 14;
 
-  desc = malloc (5);		// +1
+  desc = malloc (5); // +1
   strncpy (desc, str + dpos, 4);
   desc[4] = '\0';
 
@@ -131,7 +131,7 @@ long numRecs (long size, long recl)
 
 double numExp (char str[])
 {
-  char nexp[5];			// +1
+  char nexp[5]; // +1
   int nexpos = 18;
   int exp;
 
@@ -144,7 +144,7 @@ double numExp (char str[])
 
 double numVar1 (char str[])
 {
-  char var1[18];			// +1
+  char var1[18]; // +1
   int var1pos = 36;
   double var;
 
