@@ -31,8 +31,10 @@ int main(int argc, char *argv[])
     double nexp;    // scaling integer
     double var1;    // variable at (1,1)
     
-    
-    maparam stcprm;
+    // Cmapf
+    maparam stcprm; // Map parameter struct
+
+    //stcm1p()
 
 
     // Open ARL to file stream
@@ -50,6 +52,8 @@ int main(int argc, char *argv[])
     // Read the standard portion of the label(50) and header(108)
     fread(label, sizeof(char), LABSIZE, arl);
     fread(header, sizeof(char), 108, arl);
+
+    puts(header); // print header
 
     // Header INDX label
     hindex = varDesc(label);
@@ -115,14 +119,22 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
 }
 
 // Be simple.
+// Pull string from header
+char *pullStr(char str[], int pos, int len)
+{   
+    char *sptr;
+    sptr = malloc(len + 1);
+    strncpy(sptr, str + pos, len); 
+    sptr[len] = '\0';
+    return sptr;
+}
+
 int numX(char str[])
 {
     int ix;
-    char cx[4]; // +1
-    int xpos = 93;
+    char *cx;
 
-    strncpy(cx, str + xpos, 3);
-    cx[3] = '\0';
+    cx = pullStr(str, 93, 3);
     ix = atoi(cx);
 
     return ix;
@@ -131,11 +143,9 @@ int numX(char str[])
 int numY(char str[])
 {
     int iy;
-    char cy[4]; // +1
-    int ypos = 96;
+    char *cy;
 
-    strncpy(cy, str + ypos, 3);
-    cy[3] = '\0';
+    cy = pullStr(str, 96, 3);
     iy = atoi(cy);
 
     return iy;
@@ -144,11 +154,8 @@ int numY(char str[])
 char *varDesc(char str[])
 {
     char *desc;
-    int dpos = 14;
 
-    desc = malloc(5); // +1
-    strncpy(desc, str + dpos, 4);
-    desc[4] = '\0';
+    desc = pullStr(str, 14, 4);
 
     return desc;
 }
@@ -160,12 +167,10 @@ long numRecs(long size, long recl)
 
 double numExp(char str[])
 {
-    char nexp[5]; // +1
-    int nexpos = 18;
     int exp;
+    char *nexp; 
 
-    strncpy(nexp, str + nexpos, 4);
-    nexp[4] = '\0';
+    nexp = pullStr(str, 18, 4);    
     exp = atof(nexp);
 
     return exp;
@@ -173,12 +178,10 @@ double numExp(char str[])
 
 double numVar1(char str[])
 {
-    char var1[18]; // +1
-    int var1pos = 36;
+    char *var1; 
     double var;
 
-    strncpy(var1, str + var1pos, 17);
-    var1[17] = '\0';
+    var1 = pullStr(str, 36, 17);
     var = atof(var1);
 
     return var;
