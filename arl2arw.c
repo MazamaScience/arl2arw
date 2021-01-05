@@ -19,9 +19,12 @@ double refLon(char str[]);
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny]);
 
+void check(int status);
+
 int main(int argc, char *argv[])
 {
 
+    /* ARL */
     FILE *arl;  // ARL file stream
     long fsize; // file byte size
 
@@ -87,9 +90,47 @@ int main(int argc, char *argv[])
     // Close ARL file stream
     fclose(arl);
 
+    /* NETCDF */
+    int ncid; 
+    int lat_dimid, lat_varid; 
+    int lon_dimid, lon_varid;
+
+    size_t lat_diml, lon_diml;
+
+    float *lats, *lons; 
+
+    // Open the netcdf
+    check(nc_open(argv[2], NC_NOWRITE, &ncid));
+
+    // Check the dimensions
+    check(nc_inq_dimid(ncid, "south_north", &lat_dimid));
+    check(nc_inq_dimlen(ncid, lat_dimid, &lat_diml));
+
+    check(nc_inq_dimid(ncid, "west_east", &lon_dimid));   
+    check(nc_inq_dimlen(ncid, lon_dimid, &lon_diml));
+
+    if ( (int) lat_diml != ny || (int) lon_diml != nx ) 
+        return 2;
+
+    // Allocate coordinate space 
+    lats = malloc(sizeof(float) * lat_diml * lon_diml);
+    lons = malloc(sizeof(float) * lat_diml * lon_diml);
+    
+    // Pull the coordinate grid (!)
+    check(nc_inq_varid(ncid, "XLAT", &lat_varid));
+    check(nc_get_var_float(ncid, lat_varid, &lats[0])); 
+    
+    check(nc_inq_varid(ncid, "XLONG", &lon_varid));
+    check(nc_get_var_float(ncid, lon_varid, &lons[0])); 
+
+    // Figure out order i.e xyxy, xx..yy, etc
+
+
     return 0;
 }
 
+
+/* ARL FUNCTIONS */
 // Unpacking 
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny])
@@ -174,9 +215,6 @@ double numVar1(char str[])
     return var;
 }
 
-
-// 
-
 double tanLat(char str[])
 {
     char *ctlat;
@@ -195,3 +233,11 @@ double refLon(char str[])
     return rlon; 
 }
 
+/* NETCDF FUNCTIONS */
+
+void check(int status) 
+{
+	if ( status != NC_NOERR ) {
+		printf("Error: %s\n", nc_strerror(status)); 
+	}
+}

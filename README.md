@@ -8,17 +8,13 @@ arl2arw will display ARL packed data and unpack them for loading into a netCDF f
 
 To convert the data data we will need to compile and output the fortran program in a directory containing the ARL packaed data file. 
 
-### Fortran
+To use: 
 ```
-gfortran arl2arw.f90 -o arl2arw -I/usr/include -lnetcdff
+# Compile
+gcc -o arl2arw arl2arw.c -lm -lnetcdf
 
-./arl2arw
-```
-
-### C Unpacking
-```
-gcc -o unpack unpack.c -lm 
-./unpack YOUR_WRF_FILE
+# Run 
+./arl2arw YOUR_ARL_FILE YOUR_NC_FILE
 ```
 
 *This should prompt the user for the name of the ARL data file within the current working directory.
