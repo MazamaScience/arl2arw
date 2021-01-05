@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <netcdf.h>
-#include <cmapf.h>
 
 #define LABSIZE 50
 
@@ -13,6 +12,10 @@ char *varDesc(char str[]);
 long numRecs(long size, long recl);
 double numExp(char str[]);
 double numVar1(char str[]);
+
+double tanLat(char str[]);
+double refLon(char str[]);
+
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny]);
 
@@ -31,12 +34,6 @@ int main(int argc, char *argv[])
     double nexp;    // scaling integer
     double var1;    // variable at (1,1)
     
-    // Cmapf
-    maparam stcprm; // Map parameter struct
-
-    //stcm1p()
-
-
     // Open ARL to file stream
     arl = fopen(argv[1], "rb");
 
@@ -52,8 +49,6 @@ int main(int argc, char *argv[])
     // Read the standard portion of the label(50) and header(108)
     fread(label, sizeof(char), LABSIZE, arl);
     fread(header, sizeof(char), 108, arl);
-
-    puts(header); // print header
 
     // Header INDX label
     hindex = varDesc(label);
@@ -95,6 +90,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+// Unpacking 
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny])
 {
@@ -109,17 +105,18 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
             rdata[i][j] = (cdata[indx] - 127.0) / scale + vold;
             vold = rdata[i][j];
             ++indx;
-            if (i < 5 && j < 25)
+            if (i < 4 && j < 15)
                 printf("(%ld,%ld): %lf ", i, j, rdata[i][j]);
         }
         vold = rdata[0][j];
-        if (j < 25)
+        if (j < 15)
             printf(" ...\n");
     }
+    printf(" ...\n");
 }
 
 // Be simple.
-// Pull string from header
+// Pull string from string
 char *pullStr(char str[], int pos, int len)
 {   
     char *sptr;
@@ -133,10 +130,8 @@ int numX(char str[])
 {
     int ix;
     char *cx;
-
     cx = pullStr(str, 93, 3);
     ix = atoi(cx);
-
     return ix;
 }
 
@@ -144,19 +139,15 @@ int numY(char str[])
 {
     int iy;
     char *cy;
-
     cy = pullStr(str, 96, 3);
     iy = atoi(cy);
-
     return iy;
 }
 
 char *varDesc(char str[])
 {
     char *desc;
-
     desc = pullStr(str, 14, 4);
-
     return desc;
 }
 
@@ -169,10 +160,8 @@ double numExp(char str[])
 {
     int exp;
     char *nexp; 
-
     nexp = pullStr(str, 18, 4);    
     exp = atof(nexp);
-
     return exp;
 }
 
@@ -180,9 +169,29 @@ double numVar1(char str[])
 {
     char *var1; 
     double var;
-
     var1 = pullStr(str, 36, 17);
     var = atof(var1);
-
     return var;
 }
+
+
+// 
+
+double tanLat(char str[])
+{
+    char *ctlat;
+    double tlat; 
+    ctlat = pullStr(str, 50, 8);
+    tlat = atof(ctlat);
+    return tlat;
+}
+
+double refLon(char str[])
+{
+    char *crlon;
+    double rlon;
+    crlon = pullStr(str, 30, 8);
+    rlon = atof(crlon);
+    return rlon; 
+}
+
