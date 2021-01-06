@@ -12,14 +12,12 @@ char *varDesc(char str[]);
 long numRecs(long size, long recl);
 double numExp(char str[]);
 double numVar1(char str[]);
-
 double tanLat(char str[]);
 double refLon(char str[]);
-
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny]);
-
 void check(int status);
+void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float lons[nx*ny], float lats[nx*ny]);
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +34,7 @@ int main(int argc, char *argv[])
     long nxy, recl; // num xy, record length
     double nexp;    // scaling integer
     double var1;    // variable at (1,1)
-    
+
     // Open ARL to file stream
     arl = fopen(argv[1], "rb");
 
@@ -91,13 +89,13 @@ int main(int argc, char *argv[])
     fclose(arl);
 
     /* NETCDF */
-    int ncid; 
-    int lat_dimid, lat_varid; 
+    int ncid;
+    int lat_dimid, lat_varid;
     int lon_dimid, lon_varid;
 
     size_t lat_diml, lon_diml;
 
-    float *lats, *lons; 
+    float *lats, *lons;
 
     // Open the netcdf
     check(nc_open(argv[2], NC_NOWRITE, &ncid));
@@ -106,32 +104,35 @@ int main(int argc, char *argv[])
     check(nc_inq_dimid(ncid, "south_north", &lat_dimid));
     check(nc_inq_dimlen(ncid, lat_dimid, &lat_diml));
 
-    check(nc_inq_dimid(ncid, "west_east", &lon_dimid));   
+    check(nc_inq_dimid(ncid, "west_east", &lon_dimid));
     check(nc_inq_dimlen(ncid, lon_dimid, &lon_diml));
 
-    if ( (int) lat_diml != ny || (int) lon_diml != nx ) 
+    if ((int)lat_diml != ny || (int)lon_diml != nx)
         return 2;
 
-    // Allocate coordinate space 
+    // Allocate coordinate space
     lats = malloc(sizeof(float) * lat_diml * lon_diml);
     lons = malloc(sizeof(float) * lat_diml * lon_diml);
-    
+
     // Pull the coordinate grid (!)
     check(nc_inq_varid(ncid, "XLAT", &lat_varid));
-    check(nc_get_var_float(ncid, lat_varid, &lats[0])); 
-    
+    check(nc_get_var_float(ncid, lat_varid, &lats[0]));
+
     check(nc_inq_varid(ncid, "XLONG", &lon_varid));
-    check(nc_get_var_float(ncid, lon_varid, &lons[0])); 
+    check(nc_get_var_float(ncid, lon_varid, &lons[0]));
 
-    // Figure out order i.e xyxy, xx..yy, etc
+    // Each XLAT and XLONG are accessed at their respective points i,j
+    float(*grid)[lon_diml][lat_diml];
+    grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
 
+    // Pull the grid (?)
+    pullGrid(lon_diml, lat_diml, *grid, lons, lats);
 
     return 0;
 }
 
-
 /* ARL FUNCTIONS */
-// Unpacking 
+// Unpacking
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char cdata[], double rdata[nx][ny])
 {
@@ -159,10 +160,10 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
 // Be simple.
 // Pull string from string
 char *pullStr(char str[], int pos, int len)
-{   
+{
     char *sptr;
     sptr = malloc(len + 1);
-    strncpy(sptr, str + pos, len); 
+    strncpy(sptr, str + pos, len);
     sptr[len] = '\0';
     return sptr;
 }
@@ -200,15 +201,15 @@ long numRecs(long size, long recl)
 double numExp(char str[])
 {
     int exp;
-    char *nexp; 
-    nexp = pullStr(str, 18, 4);    
+    char *nexp;
+    nexp = pullStr(str, 18, 4);
     exp = atof(nexp);
     return exp;
 }
 
 double numVar1(char str[])
 {
-    char *var1; 
+    char *var1;
     double var;
     var1 = pullStr(str, 36, 17);
     var = atof(var1);
@@ -218,7 +219,7 @@ double numVar1(char str[])
 double tanLat(char str[])
 {
     char *ctlat;
-    double tlat; 
+    double tlat;
     ctlat = pullStr(str, 50, 8);
     tlat = atof(ctlat);
     return tlat;
@@ -230,14 +231,36 @@ double refLon(char str[])
     double rlon;
     crlon = pullStr(str, 30, 8);
     rlon = atof(crlon);
-    return rlon; 
+    return rlon;
 }
 
 /* NETCDF FUNCTIONS */
 
-void check(int status) 
+void check(int status)
 {
-	if ( status != NC_NOERR ) {
-		printf("Error: %s\n", nc_strerror(status)); 
-	}
+    if (status != NC_NOERR)
+    {
+        printf("Error: %s\n", nc_strerror(status));
+    }
+}
+
+/* The logic here is funky; this is due to the storage model of netcdf variables. 
+   Though coordinates technically should live on a grid, they do not. */
+
+void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float lons[nx*ny], float lats[nx*ny])
+{
+    int indx = 0;
+    for (size_t j = 0; j < ny; ++j)
+    {
+        int cx = 0;
+        for (size_t i = 0; i < nx; ++i)
+        {
+            grid[i][j] = lons[indx];
+            ++indx;
+            ++cx;
+            //printf("%ld, %ld: %f ", i, j, grid[i][j]);
+        }
+        grid[cx][j] = lats[indx];
+        printf("%f \n", grid[cx][j]);
+    }
 }
