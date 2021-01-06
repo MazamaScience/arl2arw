@@ -244,8 +244,10 @@ void check(int status)
     }
 }
 
-/* The logic here is funky; this is due to the storage model of netcdf variables. 
-   Though coordinates technically should live on a grid, they do not. */
+/* 
+   WIP: The logic here is funky; this is due to the storage model of netcdf variables. 
+   Though coordinates technically should live on a grid, they do not and instead must be accessed as i, j(?)
+*/
 
 void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float lons[nx*ny], float lats[nx*ny])
 {
@@ -257,10 +259,11 @@ void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float lons[nx*ny], float
         {
             grid[i][j] = lons[indx];
             ++indx;
-            ++cx;
+            
             //printf("%ld, %ld: %f ", i, j, grid[i][j]);
         }
         grid[cx][j] = lats[indx];
         printf("%f \n", grid[cx][j]);
+        ++cx;
     }
 }
