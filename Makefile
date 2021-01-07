@@ -1,7 +1,6 @@
-.SUFFIXES: 
-	FC = gfortran
+CC = gcc
+CFLAGS = -I .
+LIBS = -lnetcdf -lm 
 
-	SOURCES = arl2arw.f90
-
-arl2arw: $(subst .f90, .o, $(SOURCES))
-	$(FC) -o $@ $+
+compile: arl2arw.c func_arl.c func_wrf.c
+	$(CC) -o arl2arw arl2arw.c func_arl.c func_wrf.c $(LIBS) $(CFLAGS)
