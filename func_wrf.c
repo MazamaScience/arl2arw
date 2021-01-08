@@ -15,26 +15,18 @@ void check(int status)
     }
 }
 
-/* 
-   WIP: The logic here is funky; this is due to the storage model of netcdf variables. 
-   Though coordinates technically should live on a grid, they do not and instead must be accessed as i, j(?)
-*/
-
-void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float lons[nx*ny], float lats[nx*ny])
+// This function pulls the 1-d Variable of NC and converts into a 2-d grid. Currently just prints. 
+void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float var[nx*ny])
 {
     int indx = 0;
     for (size_t j = 0; j < ny; ++j)
     {
-        int cx = 0;
         for (size_t i = 0; i < nx; ++i)
         {
-            grid[i][j] = lons[indx];
+            grid[i][j] = var[indx];
             ++indx;
             
-            //printf("%ld, %ld: %f ", i, j, grid[i][j]);
+            printf("%ld, %ld: %f\n", i, j, grid[i][j]);
         }
-        grid[cx][j] = lats[indx];
-        printf("%f \n", grid[cx][j]);
-        ++cx;
     }
 }

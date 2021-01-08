@@ -111,11 +111,18 @@ int main(int argc, char *argv[])
     check(nc_get_var_float(ncid, lon_varid, &lons[0]));
 
     // Each XLAT and XLONG are accessed at their respective points i,j
-    float(*grid)[lon_diml][lat_diml];
-    grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
+    // Create 2-d array to store coordinate vars for lats and lons
+    float(*lon_grid)[lon_diml][lat_diml];
+    lon_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
 
-    // Pull the grid (?)
-    pullGrid(lon_diml, lat_diml, *grid, lons, lats);
+    float(*lat_grid)[lon_diml][lat_diml];
+    lat_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
+
+    // Pull the grids of both lat and lon nc vars
+    pullGrid(lon_diml, lat_diml, *lon_grid, lons);
+    pullGrid(lon_diml, lat_diml, *lat_grid, lats);
+
+    printf("\n\n%f\n", lat_grid[10][11]);
 
     return 0;
 }
