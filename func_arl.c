@@ -9,7 +9,7 @@
 /* ARL FUNCTIONS */
 // Unpacking
 void unpack(double nexp, double var1, size_t nx, size_t ny,
-            char cdata[], double rdata[nx][ny])
+            char *cdata, double rdata[nx][ny])
 {
     int indx = 0;
     double vold = var1;
@@ -34,7 +34,7 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
 
 // Be simple.
 // Pull string from string
-char *pullStr(char str[], int pos, int len)
+char *pullStr(char *str, int pos, int len)
 {
     char *sptr;
     sptr = malloc(len + 1);
@@ -43,7 +43,7 @@ char *pullStr(char str[], int pos, int len)
     return sptr;
 }
 
-int numX(char str[])
+int numX(char *str)
 {
     int ix;
     char *cx;
@@ -52,7 +52,7 @@ int numX(char str[])
     return ix;
 }
 
-int numY(char str[])
+int numY(char *str)
 {
     int iy;
     char *cy;
@@ -61,7 +61,7 @@ int numY(char str[])
     return iy;
 }
 
-char *varDesc(char str[])
+char *varDesc(char *str)
 {
     char *desc;
     desc = pullStr(str, 14, 4);
@@ -73,7 +73,7 @@ long numRecs(long size, long recl)
     return size / recl;
 }
 
-double numExp(char str[])
+double numExp(char *str)
 {
     int exp;
     char *nexp;
@@ -82,7 +82,7 @@ double numExp(char str[])
     return exp;
 }
 
-double numVar1(char str[])
+double numVar1(char *str)
 {
     char *var1;
     double var;
@@ -91,7 +91,7 @@ double numVar1(char str[])
     return var;
 }
 
-double tanLat(char str[])
+double tanLat(char *str)
 {
     char *ctlat;
     double tlat;
@@ -100,7 +100,7 @@ double tanLat(char str[])
     return tlat;
 }
 
-double refLon(char str[])
+double refLon(char *str)
 {
     char *crlon;
     double rlon;
