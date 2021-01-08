@@ -1,25 +1,24 @@
 # arl2arw
 
-Convert ARL data format to WRF NetCDF
+**This application is still under development**
 
-# Usage
+arl2arw is program used for converting the HYSPLIT compatible Air Resources Laboratory (ARL) Packed Data Format to WRF-_ish_ Network Common Data Format.
 
-arl2arw will display ARL packed data and unpack them for loading into a netCDF format.
+## Getting Started
 
-To convert the data data we will need to compile and output the fortran program in a directory containing the ARL packaed data file. 
+The application is written with an icluded make file for simple compilation using GCC. arl2arw **requires** the NetCDF C libraries to be installed. 
 
-To use: 
+#### Compile
+
 ```
-# Compile
-gcc -o arl2arw arl2arw.c -lm -lnetcdf
+make compile
+```
 
-# Run 
+#### Run 
+
+```
 ./arl2arw YOUR_ARL_FILE YOUR_NC_FILE
 ```
-
-*This should prompt the user for the name of the ARL data file within the current working directory.
-
-Compiling this program requires the GNU Fortran compiler, gfortran.
 
 ## HYSPLIT
 
