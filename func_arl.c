@@ -7,6 +7,30 @@
 #include <arl2arw.h>
 
 /* ARL FUNCTIONS */
+Grid unpack2(double nexp, double var1, size_t nx, size_t ny, char *cdata)
+{
+    Grid rdata;
+    int indx = 0;
+    double vold = var1;
+    double scale = pow(2.0, (7.0 - nexp));
+
+    for (size_t j = 0; j < ny; ++j)
+    {
+        for (size_t i = 0; i < nx; ++i)
+        {
+            rdata.val[i][j] = (cdata[indx] - 127.0) / scale + vold;
+            vold = rdata.val[i][j];
+            ++indx;
+            if (i < 4 && j < 15)
+                printf("(%ld,%ld): %lf ", i, j, rdata.val[i][j]);
+        }
+        vold = rdata.val[0][j];
+        if (j < 15)
+            printf(" ...\n");
+    }
+    printf(" ...\n");
+    return rdata; 
+}
 // Unpacking
 void unpack(double nexp, double var1, size_t nx, size_t ny,
             char *cdata, double rdata[nx][ny])

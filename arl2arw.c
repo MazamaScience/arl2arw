@@ -1,14 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 #include <netcdf.h>
-
 #include <arl2arw.h>
 
 #define LABSIZE 50
 
-int main(int argc, char *argv[])
+// typedef struct {
+//     double **longitude; 
+//     double **latitude; 
+//     double *data;
+//     char *label;
+
+// } Grid;
+
+int main(int argc, char **argv)
 {
 
     /* ARL */
@@ -57,6 +63,7 @@ int main(int argc, char *argv[])
     cdata = malloc(sizeof(char) * ((size_t)nxy));
     rdata = malloc(sizeof(double[(size_t)nx][(size_t)ny]));
 
+    Grid data; // LOOK! 
     // Unpack each record described by its 50-byte record label
     rewind(arl);
     int rec = 0;
@@ -70,7 +77,9 @@ int main(int argc, char *argv[])
             nexp = numExp(label);
             var1 = numVar1(label);
             printf("\n%s\n", label);
-            unpack(nexp, var1, (size_t)nx, (size_t)ny, cdata, *rdata);
+            // unpack(nexp, var1, (size_t)nx, (size_t)ny, cdata, *rdata);
+            data = unpack2(nexp, var1, (size_t)nx, (size_t)ny, cdata);
+
         }
     }
 
@@ -112,17 +121,35 @@ int main(int argc, char *argv[])
 
     // Each XLAT and XLONG are accessed at their respective points i,j
     // Create 2-d array to store coordinate vars for lats and lons
-    float(*lon_grid)[lon_diml][lat_diml];
-    lon_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
+    // float (*lon_grid)[lon_diml][lat_diml];
+    // lon_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
 
-    float(*lat_grid)[lon_diml][lat_diml];
-    lat_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
+    // float (*lat_grid)[lon_diml][lat_diml];
+    // lat_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
+
+    //Grid grid;
+    // grid.nx = nx; 
+    // grid.ny = ny; 
+    // Grid *gridptr = &grid; 
+
+    // pullGrid3(nx, ny, gridptr, lons);
+
+    // printf("%lf", grid.longitude[0]);
+
+    // double **poo = pullGrid2(lon_diml, lat_diml, lons);
+    //float (*lg)[nx][ny];
 
     // Pull the grids of both lat and lon nc vars
-    pullGrid(lon_diml, lat_diml, *lon_grid, lons);
-    pullGrid(lon_diml, lat_diml, *lat_grid, lats);
+    // pullGrid(lon_diml, lat_diml, lon_grid, lons);
+    // pullGrid(lon_diml, lat_diml, lat_grid, lats);
 
-    printf("\n\n%f\n", lat_grid[10][11]);
+    // printf("%f", *lat_grid[2][1]);
+
+    Grid glons = makeGrid(nx, ny, lons);
+    Grid glats = makeGrid(nx, ny, lats);
+    // Grid data = makeGrid(nx, ny, lons);
+    printf("%f, %f: %f", glons.val[400][280], glats.val[400][280], data.val[400][280]);
+
 
     return 0;
 }

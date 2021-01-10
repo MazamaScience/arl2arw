@@ -18,6 +18,7 @@ void check(int status)
 // This function pulls the 1-d Variable of NC and converts into a 2-d grid. Currently just prints. 
 void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float var[nx*ny])
 {
+
     int indx = 0;
     for (size_t j = 0; j < ny; ++j)
     {
@@ -26,7 +27,23 @@ void pullGrid(size_t nx, size_t ny, float grid[nx][ny], float var[nx*ny])
             grid[i][j] = var[indx];
             ++indx;
             
-            printf("%ld, %ld: %f\n", i, j, grid[i][j]);
+            //printf("%ld, %ld: %f\n", i, j, grid[i][j]);
         }
     }
+}
+
+Grid makeGrid(size_t nx, size_t ny, float var[nx*ny])
+{
+    Grid grid;
+    
+    int indx = 0;
+    for (size_t j = 0; j < ny; ++j)
+    {
+        for (size_t i = 0; i < nx; ++i)
+        {
+            grid.val[i][j] = var[indx];
+            ++indx;
+        }
+    }
+    return grid;
 }
