@@ -1,6 +1,9 @@
 #define MAXSIZE 500
 
+#define LABSIZE 50
+
 typedef struct {
+    char label[LABSIZE]; 
     float val[MAXSIZE][MAXSIZE]; // unpacked 2-d real array
 } Grid;
 

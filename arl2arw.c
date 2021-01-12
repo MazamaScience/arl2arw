@@ -4,16 +4,6 @@
 #include <netcdf.h>
 #include <arl2arw.h>
 
-#define LABSIZE 50
-
-// typedef struct {
-//     double **longitude; 
-//     double **latitude; 
-//     double *data;
-//     char *label;
-
-// } Grid;
-
 int main(int argc, char **argv)
 {
 
@@ -56,18 +46,20 @@ int main(int argc, char **argv)
     recl = nxy + LABSIZE;
 
     // Define data arrays
-    char *cdata;                            // packed 1-d char array
-    double(*rdata)[(size_t)nx][(size_t)ny]; // unpacked 2-d real array
+    char *cdata; // packed 1-d char array
 
     // Allocate array space
     cdata = malloc(sizeof(char) * ((size_t)nxy));
-    rdata = malloc(sizeof(double[(size_t)nx][(size_t)ny]));
+    // rdata = malloc(sizeof(double[(size_t)nx][(size_t)ny]));
 
-    Grid data; // LOOK! 
+    int nrecs = numRecs(fsize, recl);
+
+    Grid *data = malloc(sizeof(Grid) * nrecs * 2); // LOOK!
+
     // Unpack each record described by its 50-byte record label
     rewind(arl);
     int rec = 0;
-    while (rec < numRecs(fsize, recl))
+    while (rec < nrecs)
     {
         ++rec;
         fread(label, sizeof(char), LABSIZE, arl);
@@ -76,10 +68,8 @@ int main(int argc, char **argv)
         {
             nexp = numExp(label);
             var1 = numVar1(label);
-            printf("\n%s\n", label);
-            // unpack(nexp, var1, (size_t)nx, (size_t)ny, cdata, *rdata);
-            data = unpack2(nexp, var1, (size_t)nx, (size_t)ny, cdata);
-
+            data[rec] = unpack2(nexp, var1, (size_t)nx, (size_t)ny, cdata);
+            strncpy(data[rec].label, label, 50);
         }
     }
 
@@ -119,37 +109,45 @@ int main(int argc, char **argv)
     check(nc_inq_varid(ncid, "XLONG", &lon_varid));
     check(nc_get_var_float(ncid, lon_varid, &lons[0]));
 
-    // Each XLAT and XLONG are accessed at their respective points i,j
-    // Create 2-d array to store coordinate vars for lats and lons
-    // float (*lon_grid)[lon_diml][lat_diml];
-    // lon_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
-
-    // float (*lat_grid)[lon_diml][lat_diml];
-    // lat_grid = malloc(sizeof(float[(size_t)lon_diml][(size_t)lat_diml]));
-
-    //Grid grid;
-    // grid.nx = nx; 
-    // grid.ny = ny; 
-    // Grid *gridptr = &grid; 
-
-    // pullGrid3(nx, ny, gridptr, lons);
-
-    // printf("%lf", grid.longitude[0]);
-
-    // double **poo = pullGrid2(lon_diml, lat_diml, lons);
-    //float (*lg)[nx][ny];
-
-    // Pull the grids of both lat and lon nc vars
-    // pullGrid(lon_diml, lat_diml, lon_grid, lons);
-    // pullGrid(lon_diml, lat_diml, lat_grid, lats);
-
-    // printf("%f", *lat_grid[2][1]);
-
     Grid glons = makeGrid(nx, ny, lons);
     Grid glats = makeGrid(nx, ny, lats);
-    // Grid data = makeGrid(nx, ny, lons);
-    printf("%f, %f: %f", glons.val[400][280], glats.val[400][280], data.val[400][280]);
 
+    // Grid data = makeGrid(nx, ny, lons);
+    // printf("%f, %f: %f", glons.val[0][0], glats.val[0][0], data.val[3][7]); // test
+    for (int r = 0; r < nrecs; ++r)
+    {
+        printf("\t\t%s\t\t\n", data[r].label);
+        for (int j = 0; j < ny; ++j)
+        {
+            for (int i = 0; i < nx; ++i)
+            {
+                printf("(%d,%d) %f, %f: %f  ", i, j, glons.val[i][j], glats.val[i][j], data[r].val[i][j]);
+            }
+        }
+    }
+    int idout;
+    int t_dimid;
+    int lon1_dimid, lat1_dimid;
+    int lon1_varid, lat1_varid;
+
+    // Create the NC file
+    check(nc_create("output.nc", NC_CLOBBER, &idout));
+
+    // Define the dimensions nx ny
+    check(nc_def_dim(idout, "TIME", NC_UNLIMITED, &t_dimid));
+    check(nc_def_dim(idout, "XLONG", nx, &lon1_dimid));
+
+    // Define the variables
+    check(nc_def_var(idout, "XLONG", NC_FLOAT, 1, &lon1_dimid, &lon1_varid));
+
+    // End define mode
+    check(nc_enddef(idout));
+
+    // Put the variables
+    check(nc_put_var_float(idout, lon1_varid, glons.val[0]));
+
+    // Close the app
+    check(nc_close(idout));
 
     return 0;
 }

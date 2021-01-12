@@ -21,14 +21,14 @@ Grid unpack2(double nexp, double var1, size_t nx, size_t ny, char *cdata)
             rdata.val[i][j] = (cdata[indx] - 127.0) / scale + vold;
             vold = rdata.val[i][j];
             ++indx;
-            if (i < 4 && j < 15)
-                printf("(%ld,%ld): %lf ", i, j, rdata.val[i][j]);
+            // if (i < 4 && j < 15)
+            //     printf("(%ld,%ld): %lf ", i, j, rdata.val[i][j]);
         }
         vold = rdata.val[0][j];
-        if (j < 15)
-            printf(" ...\n");
+        // if (j < 15)
+        //     printf(" ...\n");
     }
-    printf(" ...\n");
+    // printf(" ...\n");
     return rdata; 
 }
 // Unpacking
