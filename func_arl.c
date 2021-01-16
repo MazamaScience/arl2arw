@@ -6,109 +6,9 @@
 
 #include <arl2arw.h>
 
-void unpack4(double nexp, double var1, int lvl, size_t nx, size_t ny,
-            char *cdata, float rdata[lvl][nx][ny])
-{
-    int indx = 0;
-    double vold = var1;
-    double scale = pow(2.0, (7.0 - nexp));
-    for (size_t j = 0; j < ny; ++j)
-    {
-        for (size_t i = 0; i < nx; ++i)
-        {
-
-            rdata[lvl][i][j] = (cdata[indx] - 127.0) / scale + vold;
-            vold = rdata[lvl][i][j];
-            ++indx;
-            if (i < 4 && j < 15)
-                printf("(%ld,%ld): %lf ", i, j, rdata[lvl][i][j]);
-        }
-        vold = rdata[lvl][0][j];
-        if (j < 15)
-            printf(" ...\n");
-    }
-    printf(" ...\n");
-}
-
-Grid2 unpack3(double nexp, double var1,  int lvl, size_t nx, size_t ny, char *cdata)
-{
-    Grid2 rdata;
-    int indx = 0;
-    double vold = var1;
-    double scale = pow(2.0, (7.0 - nexp));
-
-    for (size_t j = 0; j < ny; ++j)
-    {
-        for (size_t i = 0; i < nx; ++i)
-        {
-            rdata.var[lvl][i][j] = (cdata[indx] - 127.0) / scale + vold;
-            vold = rdata.var[lvl][i][j];
-            ++indx;
-            // if (i < 4 && j < 15)
-            //     printf("(%ld,%ld): %lf ", i, j, rdata.val[i][j]);
-        }
-        vold = rdata.var[lvl][0][j];
-        // if (j < 15)
-        //     printf(" ...\n");
-    }
-    // printf(" ...\n");
-    return rdata; 
-}
-
-/* ARL FUNCTIONS */
-Grid unpack2(double nexp, double var1,  size_t nx, size_t ny, char *cdata)
-{
-    Grid rdata;
-    int indx = 0;
-    double vold = var1;
-    double scale = pow(2.0, (7.0 - nexp));
-
-    for (size_t j = 0; j < ny; ++j)
-    {
-        for (size_t i = 0; i < nx; ++i)
-        {
-            rdata.val[i][j] = (cdata[indx] - 127.0) / scale + vold;
-            vold = rdata.val[i][j];
-            ++indx;
-            // if (i < 4 && j < 15)
-            //     printf("(%ld,%ld): %lf ", i, j, rdata.val[i][j]);
-        }
-        vold = rdata.val[0][j];
-        // if (j < 15)
-        //     printf(" ...\n");
-    }
-    // printf(" ...\n");
-    return rdata; 
-}
-void unpack1(double nexp, double var1, size_t nx, size_t ny,
-            char *cdata)
-{
-    int indx = 0;
-    double vold = var1;
-    double scale = pow(2.0, (7.0 - nexp));
-    float rdata[nx][ny]; 
-
-    for (size_t j = 0; j < ny; ++j)
-    {
-        //rdata = malloc(sizeof(float) * ny);
-        for (size_t i = 0; i < nx; ++i)
-        {
-            //*rdata = malloc(sizeof(float) * nx);
-            rdata[i][j] = (cdata[indx] - 127.0) / scale + vold;
-            vold = rdata[i][j];
-            ++indx;
-            if (i < 4 && j < 15)
-                printf("(%ld,%ld): %lf ", i, j, rdata[i][j]);
-        }
-        vold = rdata[0][j];
-        if (j < 15)
-            printf(" ...\n");
-    }
-    printf(" ...\n");
-}
 // Unpacking
-void unpack(double nexp, double var1, size_t nx, size_t ny,
-            char *cdata, double rdata[nx][ny])
+void unpack(double nexp, double var1, size_t ny, size_t nx,
+            char *cdata, double rdata[ny][nx])
 {
     int indx = 0;
     double vold = var1;
@@ -118,13 +18,13 @@ void unpack(double nexp, double var1, size_t nx, size_t ny,
     {
         for (size_t i = 0; i < nx; ++i)
         {
-            rdata[i][j] = (cdata[indx] - 127.0) / scale + vold;
-            vold = rdata[i][j];
+            rdata[j][i] = (cdata[indx] - 127.0) / scale + vold;
+            vold = rdata[j][i];
             ++indx;
             // if (i < 4 && j < 15)
             //     printf("(%ld,%ld): %lf ", i, j, rdata[i][j]);
         }
-        vold = rdata[0][j];
+        vold = rdata[j][0];
         // if (j < 15)
         //     printf(" ...\n");
     }
