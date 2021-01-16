@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I .
+CFLAGS = -I . -Wall
 LIBS = -lnetcdf -lm 
 
 compile: arl2arw.c func_arl.c func_wrf.c
