@@ -5,7 +5,8 @@
 #include <arl2arw.h>
 
 // Allocate data memory on heap
-static double data[1][100][500][500]; // (time(1), level, lat, long)
+// (time(1), level, rec, lat, long)
+static double data[1][100][100][500][500];
 
 int main(int argc, char **argv)
 {
@@ -128,37 +129,68 @@ int main(int argc, char **argv)
     check(nc_def_var(ncout_id, XLONG, NC_FLOAT, 3, grid_dimids, &xlong_var_id));
 
     // Unpacked varibales
-    // int std_dim_ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
+    // int std_dimV_ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
     // int std_var_ids[nLvls];
+
+    // // Time, lat, long (3-D) dim and var ids
+    // int t_y_x_dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
+    // int t_y_x_varids[nLvls];
+
+    // // Time, level, lat, long_stag dim and varids
+    // int t_z_y_xs_dimids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_stag_dim_id};
+    // int t_z_y_xs_varids[nLvls];
+
+    // Store each record var desc of every level
+    char **desc[nLvls];
 
     // write data
     rewind(arl);
-    for (int z = 0; z < nLvls; ++z) // For every level z
+    // For every level z
+    for (int z = 0; z < nLvls; ++z)
     {
-        char *desc;
-        for (int rec = 0; rec < rec_count[z]; ++rec) // For every record in level z
+        // Create string array of record count length per level
+        desc[z] = malloc(sizeof(char *) * (rec_count[z]));
+
+        printf("\tz: %d\n", z); // DEBUG
+
+        // For every record rec of level z
+        for (int rec = 0; rec < rec_count[z]; ++rec)
         {
             fread(label, sizeof(char), LABSIZE, arl);
             fread(cdata, sizeof(char), (size_t)nxy, arl);
-            desc = varDesc(label);
-            if (strcmp(desc, hindx) != 0)
+
+            // If the read lvl is not lvl z revr record length and break
+            if (curLvl(label) != z)
             {
+                fseek(arl, -(long)recl, SEEK_CUR);
+                break;
+            }
+            // Store current record var desc
+            char *cdesc = varDesc(label);
+
+            // Write label, packed character data
+            if (strcmp(cdesc, hindx) != 0) // Not INDX
+            {
+                // Save var desc at level and rec for later
+                desc[z][rec] = cdesc;
+
+                // Retrive label consts
                 double nexp = numExp(label);
                 double var1 = numVar1(label);
-                unpack(nexp, var1, ny, nx, cdata, data[0][z]); // unpack to data
-                printf("\t%f\n", data[0][z][0][0]); // DEBUG
-            }
-        }
-        // check(nc_def_var(ncout_id, desc, NC_FLOAT, 4, std_dim_ids, &std_var_ids[z]));
-        for (int j = 0; j < ny; ++j)
-        {
-            for (int i = 0; i < nx; ++i)
-            {
 
-                // printf("\t%f\n", data[0][z][j][i]);
+                // Unpack character data to 5-d data array at time 1 and level z
+                unpack(nexp, var1, ny, nx, cdata, data[0][z][rec]);
+
+                printf("\tdesc: %s %f\n", cdesc, data[0][z][rec][0][0]); // DEBUG
+                // printf("%s\n", label); // DEBUG
             }
         }
     }
+
+    // Desc is accessed via its level, rec in lvl
+    printf("%s\n", desc[0][1]); // DEBUG
+    // Data is accessed via its time, lvl, rec in level, y, x
+    printf("\t%f\n", data[0][0][1][0][0]); // DEBUG
 
     // end def
     check(nc_enddef(ncout_id));

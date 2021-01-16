@@ -7,7 +7,7 @@
 #include <arl2arw.h>
 
 // Unpacking
-void unpack(double nexp, double var1, size_t ny, size_t nx,
+void unpack(double nexp, double var1, size_t ny, size_t nx, 
             char *cdata, double rdata[ny][nx])
 {
     int indx = 0;

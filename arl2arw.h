@@ -47,7 +47,7 @@ double numVar1(char *str);
 double tanLat(char *str);
 double refLon(char *str);
 int curLvl(char *label);
-void unpack(double nexp, double var1, size_t ny, size_t nx,
+void unpack(double nexp, double var1, size_t ny, size_t nx, 
             char *cdata, double rdata[ny][nx]);
 
 /* WRF NC FUNC HEADERS */
