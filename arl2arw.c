@@ -54,11 +54,11 @@ int main(int argc, char **argv)
         ++current_rec;
         fread(label, sizeof(char), LABSIZE, arl);
         fread(cdata, sizeof(char), (size_t)nxy, arl);
-        rec_count[current_lvl] += 1;
         if (curLvl(label) != current_lvl)
         {
             ++current_lvl;
         }
+        rec_count[current_lvl] += 1;
     }
 
     // NC vars ids
@@ -100,6 +100,7 @@ int main(int argc, char **argv)
     int xlat_dim_id;
     int xlong_dim_id;
     int lvls_dim_id;
+    // int rec_dim_id;
 
     int xlat_stag_dim_id;
     int xlong_stag_dim_id;
@@ -112,9 +113,11 @@ int main(int argc, char **argv)
     // Define dimensions
     check(nc_def_dim(ncout_id, TIME_NAME, NC_UNLIMITED, &times_dim_id));
     check(nc_def_dim(ncout_id, DATESTRLEN_NAME, 19, &dsl_dim_id)); // Look into
-    check(nc_def_dim(ncout_id, WEST_EAST, ny, &xlat_dim_id));
-    check(nc_def_dim(ncout_id, SOUTH_NORTH, nx, &xlong_dim_id));
+
+    check(nc_def_dim(ncout_id, WEST_EAST, nx, &xlong_dim_id));
+    check(nc_def_dim(ncout_id, SOUTH_NORTH, ny, &xlat_dim_id));
     check(nc_def_dim(ncout_id, BOTTOM_TOP, nLvls - 1, &lvls_dim_id));
+
     check(nc_def_dim(ncout_id, BOTTOM_TOP_STAG, nLvls, &lvls_stag_dim_id));
     check(nc_def_dim(ncout_id, WEST_EAST_STAG, nx + 1, &xlong_stag_dim_id));
     check(nc_def_dim(ncout_id, SOUTH_NORTH_STAG, ny + 1, &xlat_stag_dim_id));
@@ -127,23 +130,19 @@ int main(int argc, char **argv)
     int grid_dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
     check(nc_def_var(ncout_id, XLAT, NC_FLOAT, 3, grid_dimids, &xlat_var_id));
     check(nc_def_var(ncout_id, XLONG, NC_FLOAT, 3, grid_dimids, &xlong_var_id));
-
-    // Unpacked varibales
-    // int std_dimV_ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
-    // int std_var_ids[nLvls];
-
-    // // Time, lat, long (3-D) dim and var ids
-    // int t_y_x_dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
-    // int t_y_x_varids[nLvls];
-
-    // // Time, level, lat, long_stag dim and varids
-    // int t_z_y_xs_dimids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_stag_dim_id};
-    // int t_z_y_xs_varids[nLvls];
+    
+    // End define mode
+    check(nc_enddef(ncout_id));
+    
+    // Write NC times, lats, longs
+    check(nc_put_vara(ncout_id, times_var_id, time_start, time_count, times));
+    check(nc_put_vara(ncout_id, xlat_var_id, grid_start, grid_count, xlats));
+    check(nc_put_vara(ncout_id, xlong_var_id, grid_start, grid_count, xlongs));
 
     // Store each record var desc of every level
     char **desc[nLvls];
 
-    // write data
+    // Unpacking
     rewind(arl);
     // For every level z
     for (int z = 0; z < nLvls; ++z)
@@ -151,58 +150,92 @@ int main(int argc, char **argv)
         // Create string array of record count length per level
         desc[z] = malloc(sizeof(char *) * (rec_count[z]));
 
-        printf("\tz: %d\n", z); // DEBUG
-
         // For every record rec of level z
-        for (int rec = 0; rec < rec_count[z]; ++rec)
+        for (int r = 0; r < rec_count[z]; ++r)
         {
             fread(label, sizeof(char), LABSIZE, arl);
-            fread(cdata, sizeof(char), (size_t)nxy, arl);
+            fread(cdata, sizeof(char), (size_t)nxy, arl); 
 
-            // If the read lvl is not lvl z revr record length and break
             if (curLvl(label) != z)
             {
                 fseek(arl, -(long)recl, SEEK_CUR);
                 break;
             }
+
             // Store current record var desc
-            char *cdesc = varDesc(label);
+            char *cdsc = varDesc(label);
+            desc[z][r] = cdsc;
 
             // Write label, packed character data
-            if (strcmp(cdesc, hindx) != 0) // Not INDX
+            if (strcmp(cdsc, hindx) != 0) // Not INDX
             {
-                // Save var desc at level and rec for later
-                desc[z][rec] = cdesc;
-
                 // Retrive label consts
                 double nexp = numExp(label);
                 double var1 = numVar1(label);
-
                 // Unpack character data to 5-d data array at time 1 and level z
-                unpack(nexp, var1, ny, nx, cdata, data[0][z][rec]);
-
-                printf("\tdesc: %s %f\n", cdesc, data[0][z][rec][0][0]); // DEBUG
+                unpack(nexp, var1, ny, nx, cdata, data[0][z][r]);
                 // printf("%s\n", label); // DEBUG
             }
         }
     }
 
-    // Desc is accessed via its level, rec in lvl
-    printf("%s\n", desc[0][1]); // DEBUG
-    // Data is accessed via its time, lvl, rec in level, y, x
-    printf("\t%f\n", data[0][0][1][0][0]); // DEBUG
+    // For every record in each level, define the variable
+    for (int z = 0; z < nLvls; ++z)
+    {
+        // create temp array
+        // double(*temp)[1][nLvls][ny][nx];
+        // temp = malloc(sizeof(double[1][nLvls][ny][nx]));
 
-    // end def
-    check(nc_enddef(ncout_id));
+        int varids[rec_count[z]];
 
-    // Write NC times, lats, longs
-    check(nc_put_vara(ncout_id, times_var_id, time_start, time_count, times));
-    check(nc_put_vara(ncout_id, xlat_var_id, grid_start, grid_count, xlats));
-    check(nc_put_vara(ncout_id, xlong_var_id, grid_start, grid_count, xlongs));
+        check(nc_redef(ncout_id));
+        for (int r = 0; r < rec_count[z]; ++r)
+        {
+            char *cdsc = desc[z][r];
 
-    check(nc_close(ncout_id)); // CLOSE nc out
+            if (z == 0)
+            {
+                int ndims = 3;
+                int dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
+                if ((strcmp(cdsc, "INDX") != 0))
+                {
+                    check(nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, dimids, &varids[z]));
+                }
+            }
+            else
+            {   
+                int ndims = 4;
+                int ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
+                int stat; // Ignore errors from attempted redefine of var
+                if (strcmp(cdsc, "UWND") == 0)
+                {
+                    ids[3] = xlong_stag_dim_id; // Stagger long 
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                }
+                else if (strcmp(cdsc, "VWND") == 0)
+                {
+                    ids[2] = xlat_stag_dim_id; // Stagger lat
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                }
+                else if (strcmp(cdsc, "WWND") == 0)
+                {
+                    ids[1] = lvls_stag_dim_id;
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                }
+                else // Default
+                {
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                }
+            }
+        }
+        check(nc_enddef(ncout_id));
+    }
 
-    fclose(arl); // close ARL
+    // Close the out NC file
+    check(nc_close(ncout_id)); 
+
+    // Close ARL file stream
+    fclose(arl); 
 
     return 0;
 }
