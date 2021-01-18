@@ -57,6 +57,5 @@ void unpack(double nexp, double var1, size_t ny, size_t nx,
 
 /* WRF NC FUNC HEADERS */
 void check(int status);
-void pullGrid(size_t nx, size_t ny, float grid[nx][ny],  float var[nx*ny]);
 
 
