@@ -8,7 +8,7 @@
 
 // Unpacking
 void unpack(double nexp, double var1, size_t ny, size_t nx, 
-            char *cdata, double rdata[ny][nx])
+            char *cdata, float rdata[ny][nx])
 {
     int indx = 0;
     double vold = var1;

@@ -29,6 +29,11 @@
 #define LON_UNITS "degrees_west"
 #define TEMP_UNITS "celsius"
 
+#define PRES "P"
+#define TEMP "TEMP"
+#define UWND "U"
+#define VWND "V"
+
 typedef struct {
     char varDesc[4];
     char label[LABSIZE]; 
@@ -48,7 +53,7 @@ double tanLat(char *str);
 double refLon(char *str);
 int curLvl(char *label);
 void unpack(double nexp, double var1, size_t ny, size_t nx, 
-            char *cdata, double rdata[ny][nx]);
+            char *cdata, float rdata[ny][nx]);
 
 /* WRF NC FUNC HEADERS */
 void check(int status);

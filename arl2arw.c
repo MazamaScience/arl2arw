@@ -6,7 +6,7 @@
 
 // Allocate data memory on heap
 // (time(1), level, rec, lat, long)
-static double data[1][100][100][500][500];
+static float data[1][100][100][500][500];
 
 int main(int argc, char **argv)
 {
@@ -67,29 +67,30 @@ int main(int argc, char **argv)
     int xlat_var_id;
     int xlong_var_id;
 
-    // times array access (time, datestrlen)
-    size_t time_start[] = {0, 0};
-    size_t time_count[] = {1, 18};
-    // grid array access (time, xlat, xlong)
-    size_t grid_start[] = {0, 0, 0};
-    size_t grid_count[] = {1, ny, nx}; // 1 time dim! y x order!
-
     // Allocate nc in var space
     char *times = malloc(sizeof(char *) * 1 * 19);
-    float *xlats = malloc(sizeof(float *) * 1 * ny * nx);
-    float *xlongs = malloc(sizeof(float *) * 1 * ny * nx);
+    float *xlats = malloc(sizeof(float) * 1 * ny * nx);
+    float *xlongs = malloc(sizeof(float) * 1 * ny * nx);
 
     // Open in NC
     check(nc_open(argv[2], NC_NOWRITE, &ncin_id));
 
     check(nc_inq_varid(ncin_id, TIME_VAR, &times_var_id));
-    check(nc_get_vara(ncin_id, times_var_id, time_start, time_count, times));
-
     check(nc_inq_varid(ncin_id, XLAT, &xlat_var_id));
-    check(nc_get_vara_float(ncin_id, xlat_var_id, grid_start, grid_count, xlats));
-
     check(nc_inq_varid(ncin_id, XLONG, &xlong_var_id));
-    check(nc_get_vara_float(ncin_id, xlat_var_id, grid_start, grid_count, xlongs));
+
+    // times array access (time, datestrlen)
+    size_t time_start[] = {0, 0};
+    size_t time_count[] = {1, 18};
+
+    // grid array access (time, xlat, xlong)
+    size_t grid_start[] = {0, 0, 0};
+    size_t grid_count[] = {1, ny, nx}; // 1 time dim! y x order!
+
+    // Get coord and time vars
+    check(nc_get_vara(ncin_id, times_var_id, time_start, time_count, times));
+    check(nc_get_vara_float(ncin_id, xlat_var_id, grid_start, grid_count, xlats));
+    check(nc_get_vara_float(ncin_id, xlong_var_id, grid_start, grid_count, xlongs));
 
     // Close in NC //
     check(nc_close(ncin_id));
@@ -100,7 +101,6 @@ int main(int argc, char **argv)
     int xlat_dim_id;
     int xlong_dim_id;
     int lvls_dim_id;
-    // int rec_dim_id;
 
     int xlat_stag_dim_id;
     int xlong_stag_dim_id;
@@ -130,10 +130,10 @@ int main(int argc, char **argv)
     int grid_dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
     check(nc_def_var(ncout_id, XLAT, NC_FLOAT, 3, grid_dimids, &xlat_var_id));
     check(nc_def_var(ncout_id, XLONG, NC_FLOAT, 3, grid_dimids, &xlong_var_id));
-    
+
     // End define mode
     check(nc_enddef(ncout_id));
-    
+
     // Write NC times, lats, longs
     check(nc_put_vara(ncout_id, times_var_id, time_start, time_count, times));
     check(nc_put_vara(ncout_id, xlat_var_id, grid_start, grid_count, xlats));
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
         for (int r = 0; r < rec_count[z]; ++r)
         {
             fread(label, sizeof(char), LABSIZE, arl);
-            fread(cdata, sizeof(char), (size_t)nxy, arl); 
+            fread(cdata, sizeof(char), (size_t)nxy, arl);
 
             if (curLvl(label) != z)
             {
@@ -178,64 +178,81 @@ int main(int argc, char **argv)
             }
         }
     }
-
+    // Create array of variable ids
+    int varids[nrecs];
+    // init current record count
+    int crec = 0;
     // For every record in each level, define the variable
     for (int z = 0; z < nLvls; ++z)
     {
-        // create temp array
-        // double(*temp)[1][nLvls][ny][nx];
-        // temp = malloc(sizeof(double[1][nLvls][ny][nx]));
-
-        int varids[rec_count[z]];
-
-        check(nc_redef(ncout_id));
         for (int r = 0; r < rec_count[z]; ++r)
         {
             char *cdsc = desc[z][r];
 
-            if (z == 0)
+            if (z == 0) // Define and write surface level vars
             {
                 int ndims = 3;
                 int dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
                 if ((strcmp(cdsc, "INDX") != 0))
                 {
-                    check(nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, dimids, &varids[z]));
+                    check(nc_redef(ncout_id));
+                    check(nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, dimids, &varids[crec]));
+                    check(nc_enddef(ncout_id));
+
+                    float temp[1][ny][nx];
+
+                    for (int j = 0; j < ny; ++j)
+                    {
+                        for (int i = 0; i < nx; ++i)
+                        {
+                            // Copy data to temp array to reduce to conformal dimensions
+                            temp[0][j][i] = data[0][z][r][j][i];
+                        }
+                    }
+
+                    size_t start[] = {0, 0, 0};
+                    size_t count[] = {1, ny, nx};
+
+                    check(nc_put_vara_float(ncout_id, varids[crec], start, count, temp[0][0]));
+
                 }
             }
-            else
-            {   
+            // TODO: Write variables at higher levels!!
+            else // Define and write vars with respect to level
+            {
                 int ndims = 4;
                 int ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
-                int stat; // Ignore errors from attempted redefine of var
+                int stat; (void)stat; // Ignore errors from attempted var redefines & unused gcc warning
                 if (strcmp(cdsc, "UWND") == 0)
                 {
-                    ids[3] = xlong_stag_dim_id; // Stagger long 
-                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                    ids[3] = xlong_stag_dim_id; // Stagger long
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[crec]);
                 }
                 else if (strcmp(cdsc, "VWND") == 0)
                 {
                     ids[2] = xlat_stag_dim_id; // Stagger lat
-                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[crec]);
                 }
                 else if (strcmp(cdsc, "WWND") == 0)
                 {
-                    ids[1] = lvls_stag_dim_id;
-                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                    ids[1] = lvls_stag_dim_id; // Stagger lvl
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[crec]);
                 }
                 else // Default
                 {
-                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[z]);
+                    stat = nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, ids, &varids[crec]);
                 }
             }
+            // iterate current record count
+            ++crec;
         }
-        check(nc_enddef(ncout_id));
     }
 
     // Close the out NC file
-    check(nc_close(ncout_id)); 
+    check(nc_close(ncout_id));
 
     // Close ARL file stream
-    fclose(arl); 
+    fclose(arl);
 
     return 0;
 }
