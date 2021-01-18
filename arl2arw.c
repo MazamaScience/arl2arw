@@ -5,7 +5,7 @@
 #include "arl2arw.h"
 
 // Allocate data memory on heap (time(1), level, rec, lat, long)
-static float data[NTIME][ZMAX][RMAX][XMAX][YMAX];
+static float data[NTIME][ZMAX][RMAX][YMAX][XMAX];
 
 int main(int argc, char **argv)
 {
