@@ -9,7 +9,6 @@ static float data[NTIME][ZMAX][RMAX][XMAX][YMAX];
 
 int main(int argc, char **argv)
 {
-
     // Open ARL to file stream
     FILE *arl = fopen(argv[1], "rb");
 
