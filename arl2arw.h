@@ -1,5 +1,12 @@
 #define MAXSIZE 500
 
+#define NTIME 1
+#define XMAX 500
+#define YMAX 500
+#define ZMAX 100
+#define RMAX 100
+
+
 #define LABSIZE 50
 
 #define NC_OUT "output.nc"
@@ -11,7 +18,7 @@
 #define TIME_NAME "Time"
 #define LVL_NAME "level"
 
-#define TIME_VAR "Times"
+#define TIMES "Times"
 #define XLAT "XLAT"
 #define XLONG "XLONG"
 #define DATESTRLEN_NAME "DateStrLen"
@@ -34,13 +41,6 @@
 #define UWND "U"
 #define VWND "V"
 
-typedef struct {
-    char varDesc[4];
-    char label[LABSIZE]; 
-    float val[MAXSIZE][MAXSIZE]; // unpacked 2-d real array
-    int level;
-} Grid;
-
 /* ARL FUNC HEADERS */
 int numX(char *str);
 int numY(char *str);
@@ -59,5 +59,4 @@ void unpack(double nexp, double var1, size_t ny, size_t nx,
 void check(int status);
 void pullGrid(size_t nx, size_t ny, float grid[nx][ny],  float var[nx*ny]);
 
-Grid makeGrid(size_t nx, size_t ny, float var[nx*ny]);
 

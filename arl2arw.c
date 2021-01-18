@@ -2,16 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netcdf.h>
-#include <arl2arw.h>
+#include "arl2arw.h"
 
-// Allocate data memory on heap
-// (time(1), level, rec, lat, long)
-static float data[1][100][100][500][500];
+// Allocate data memory on heap (time(1), level, rec, lat, long)
+static float data[NTIME][ZMAX][RMAX][XMAX][YMAX];
 
 int main(int argc, char **argv)
 {
 
-    /* ARL */
     // Open ARL to file stream
     FILE *arl = fopen(argv[1], "rb");
 
@@ -37,6 +35,8 @@ int main(int argc, char **argv)
     long nxy = nx * ny;
     long recl = nxy + LABSIZE;
     int nLvls = numLvls(header);
+
+    free(header);
 
     // Allocate packed char array space
     char *cdata = malloc(sizeof(char) * ((size_t)nxy));
@@ -75,17 +75,17 @@ int main(int argc, char **argv)
     // Open in NC
     check(nc_open(argv[2], NC_NOWRITE, &ncin_id));
 
-    check(nc_inq_varid(ncin_id, TIME_VAR, &times_var_id));
+    check(nc_inq_varid(ncin_id, TIMES, &times_var_id));
     check(nc_inq_varid(ncin_id, XLAT, &xlat_var_id));
     check(nc_inq_varid(ncin_id, XLONG, &xlong_var_id));
 
     // times array access (time, datestrlen)
     size_t time_start[] = {0, 0};
-    size_t time_count[] = {1, 18};
+    size_t time_count[] = {NTIME, 18};
 
     // grid array access (time, xlat, xlong)
     size_t grid_start[] = {0, 0, 0};
-    size_t grid_count[] = {1, ny, nx}; // 1 time dim! y x order!
+    size_t grid_count[] = {NTIME, ny, nx}; // 1 time dim! y x order!
 
     // Get coord and time vars
     check(nc_get_vara(ncin_id, times_var_id, time_start, time_count, times));
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 
     // Time variables
     int times_dimids[] = {times_dim_id, dsl_dim_id};
-    check(nc_def_var(ncout_id, TIME_VAR, NC_CHAR, 2, times_dimids, &times_var_id));
+    check(nc_def_var(ncout_id, TIMES, NC_CHAR, 2, times_dimids, &times_var_id));
 
     // Latitude longitude variables
     int grid_dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
@@ -138,19 +138,22 @@ int main(int argc, char **argv)
     check(nc_put_vara(ncout_id, times_var_id, time_start, time_count, times));
     check(nc_put_vara(ncout_id, xlat_var_id, grid_start, grid_count, xlats));
     check(nc_put_vara(ncout_id, xlong_var_id, grid_start, grid_count, xlongs));
+    
+    free(times);
+    free(xlats);
+    free(xlongs);
 
     // Store each record var desc of every level
     char **desc[nLvls];
 
-    // Unpacking
+    // Unpak the character data
     rewind(arl);
-    // For every level z
+    // For every record r in level z
     for (int z = 0; z < nLvls; ++z)
     {
         // Create string array of record count length per level
         desc[z] = malloc(sizeof(char *) * (rec_count[z]));
 
-        // For every record rec of level z
         for (int r = 0; r < rec_count[z]; ++r)
         {
             fread(label, sizeof(char), LABSIZE, arl);
@@ -178,51 +181,67 @@ int main(int argc, char **argv)
             }
         }
     }
+    
+    free(label);
+    free(hindx);
+    free(cdata);
+
     // Create array of variable ids
     int varids[nrecs];
     // init current record count
     int crec = 0;
-    // For every record in each level, define the variable
+
+    // For every record r in each level z 
     for (int z = 0; z < nLvls; ++z)
     {
         for (int r = 0; r < rec_count[z]; ++r)
         {
+            // Store current variable desc
             char *cdsc = desc[z][r];
 
-            if (z == 0) // Define and write surface level vars
+            // Define and write surface level vars (z = 0)
+            if (z == 0) 
             {
                 int ndims = 3;
                 int dimids[] = {times_dim_id, xlat_dim_id, xlong_dim_id};
                 if ((strcmp(cdsc, "INDX") != 0))
                 {
+                    // Define each variable 
                     check(nc_redef(ncout_id));
                     check(nc_def_var(ncout_id, cdsc, NC_FLOAT, ndims, dimids, &varids[crec]));
                     check(nc_enddef(ncout_id));
+                    
+                    // Create temporary data array to reduce to conformal dimensions
+                    float temp[NTIME][ny][nx];
 
-                    float temp[1][ny][nx];
-
+                    // Copy data to temp array 
                     for (int j = 0; j < ny; ++j)
                     {
                         for (int i = 0; i < nx; ++i)
                         {
-                            // Copy data to temp array to reduce to conformal dimensions
                             temp[0][j][i] = data[0][z][r][j][i];
                         }
                     }
 
+                    // Create start and count vectors (time, xlats, xlongs)
                     size_t start[] = {0, 0, 0};
-                    size_t count[] = {1, ny, nx};
-
+                    size_t count[] = {NTIME, ny, nx};
+                    
+                    // Put temp data array into NC
                     check(nc_put_vara_float(ncout_id, varids[crec], start, count, temp[0][0]));
-
                 }
             }
             // TODO: Write variables at higher levels!!
             else // Define and write vars with respect to level
             {
+                // Define upper level variable dimensions and dimension ids
                 int ndims = 4;
                 int ids[] = {times_dim_id, lvls_dim_id, xlat_dim_id, xlong_dim_id};
-                int stat; (void)stat; // Ignore errors from attempted var redefines & unused gcc warning
+                
+                // Ignore errors from attempted var redefines & unused gcc warning
+                int stat;
+                (void)stat; 
+
                 if (strcmp(cdsc, "UWND") == 0)
                 {
                     ids[3] = xlong_stag_dim_id; // Stagger long
@@ -247,6 +266,8 @@ int main(int argc, char **argv)
             ++crec;
         }
     }
+    
+    free(rec_count);
 
     // Close the out NC file
     check(nc_close(ncout_id));

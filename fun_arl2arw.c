@@ -3,8 +3,16 @@
 #include <stdlib.h>
 #include <math.h>
 #include <netcdf.h>
+#include "arl2arw.h"
 
-#include <arl2arw.h>
+// netCDF status checker
+void check(int status)
+{
+    if (status != NC_NOERR)
+    {
+        printf("Error: %s\n", nc_strerror(status));
+    }
+}
 
 // Unpacking
 void unpack(double nexp, double var1, size_t ny, size_t nx, 
